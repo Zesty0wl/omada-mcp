@@ -19,8 +19,6 @@ export function registerBlockClientTool(server: McpServer, client: OmadaClient):
                 destructiveHint: true,
             },
         },
-        wrapToolHandler('blockClient', async ({ clientMac, siteId }) =>
-            toToolResult(await client.blockClient(clientMac, siteId))
-        )
+        wrapToolHandler('blockClient', async ({ clientMac, siteId }) => toToolResult(await client.blockClient(clientMac, siteId)))
     );
 }

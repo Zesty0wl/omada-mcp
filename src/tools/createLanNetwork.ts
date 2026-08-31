@@ -31,8 +31,6 @@ export function registerCreateLanNetworkTool(server: McpServer, client: OmadaCli
                 destructiveHint: true,
             },
         },
-        wrapToolHandler('createLanNetwork', async ({ siteId, ...data }) =>
-            toToolResult(await client.createLanNetwork(data, siteId))
-        )
+        wrapToolHandler('createLanNetwork', async ({ siteId, ...data }) => toToolResult(await client.createLanNetwork(data, siteId)))
     );
 }

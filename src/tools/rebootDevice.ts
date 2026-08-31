@@ -19,8 +19,6 @@ export function registerRebootDeviceTool(server: McpServer, client: OmadaClient)
                 destructiveHint: true,
             },
         },
-        wrapToolHandler('rebootDevice', async ({ deviceMac, siteId }) =>
-            toToolResult(await client.rebootDevice(deviceMac, siteId))
-        )
+        wrapToolHandler('rebootDevice', async ({ deviceMac, siteId }) => toToolResult(await client.rebootDevice(deviceMac, siteId)))
     );
 }

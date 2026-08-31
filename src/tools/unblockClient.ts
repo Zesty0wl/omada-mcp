@@ -19,8 +19,6 @@ export function registerUnblockClientTool(server: McpServer, client: OmadaClient
                 destructiveHint: true,
             },
         },
-        wrapToolHandler('unblockClient', async ({ clientMac, siteId }) =>
-            toToolResult(await client.unblockClient(clientMac, siteId))
-        )
+        wrapToolHandler('unblockClient', async ({ clientMac, siteId }) => toToolResult(await client.unblockClient(clientMac, siteId)))
     );
 }

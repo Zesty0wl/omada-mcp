@@ -19,8 +19,6 @@ export function registerAdoptDeviceTool(server: McpServer, client: OmadaClient):
                 destructiveHint: true,
             },
         },
-        wrapToolHandler('adoptDevice', async ({ deviceMac, siteId }) =>
-            toToolResult(await client.adoptDevice(deviceMac, siteId))
-        )
+        wrapToolHandler('adoptDevice', async ({ deviceMac, siteId }) => toToolResult(await client.adoptDevice(deviceMac, siteId)))
     );
 }

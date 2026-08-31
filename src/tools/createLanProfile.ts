@@ -26,8 +26,6 @@ export function registerCreateLanProfileTool(server: McpServer, client: OmadaCli
                 destructiveHint: true,
             },
         },
-        wrapToolHandler('createLanProfile', async ({ siteId, ...data }) =>
-            toToolResult(await client.createLanProfile(data, siteId))
-        )
+        wrapToolHandler('createLanProfile', async ({ siteId, ...data }) => toToolResult(await client.createLanProfile(data, siteId)))
     );
 }

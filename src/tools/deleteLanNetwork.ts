@@ -19,8 +19,6 @@ export function registerDeleteLanNetworkTool(server: McpServer, client: OmadaCli
                 destructiveHint: true,
             },
         },
-        wrapToolHandler('deleteLanNetwork', async ({ siteId, networkId }) =>
-            toToolResult(await client.deleteLanNetwork(networkId, siteId))
-        )
+        wrapToolHandler('deleteLanNetwork', async ({ siteId, networkId }) => toToolResult(await client.deleteLanNetwork(networkId, siteId)))
     );
 }
