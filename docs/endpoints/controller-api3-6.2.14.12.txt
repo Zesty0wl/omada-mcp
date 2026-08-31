@@ -1,0 +1,464 @@
+Omada internal API endpoint dump
+controller firmware : 6.2.14.12
+generated           : 2026-08-31
+modules scanned     : 225
+distinct paths      : 224
+
+Paths are relative. Prefix them with:
+  <controller>/<omadacId>/api/v2/sites/<siteId>
+for site-scoped paths, or <controller>/<omadacId>/api/v2 for controller-scoped ones.
+
+Authenticate with a cookie + Csrf-Token pair from:
+  POST <controller>/<omadacId>/api/v2/login  {"username":"...","password":"..."}
+
+This is an undocumented API and TP-Link may change it between firmware releases.
+
+==============================================================================
+/clients
+    modules: map/topology
+/clients/
+    modules: hotspot/authClients, insight/known_clients
+/cmd/acls/modifyIndex
+    modules: settings/firewall_acl/acl
+/cmd/bandwidthControls/modifyIndex
+    modules: settings/transmission/bandwidthControl
+/cmd/clients/
+    modules: hotspot/authClients, insight/known_clients
+/cmd/clients/delete
+    modules: insight/known_clients, insight/past_authorization
+/cmd/countWlans
+    modules: settings/wireless_networks, settings/wireless_networks/wifi_network
+/cmd/devices/
+    modules: access_points/device_index, ap_settings/configuration, gateway_settings/config, map/map, map/map/eapConfig, switch_settings/config
+/cmd/devices/${i}/add/retry
+    modules: access_points/device_index
+/cmd/devices/active
+    modules: access_points/active_device, setup_cloud
+/cmd/devices/add
+    modules: access_points/importSN, setup_cloud
+/cmd/devices/adopt
+    modules: access_points/device_index, meshAdopt
+/cmd/devices/batchAdopt
+    modules: access_points/device_index
+/cmd/devices/checkFirmware
+    modules: ap_settings/configuration, gateway_settings/config, switch_settings/config
+/cmd/devices/typeUpgrade
+    modules: ap_settings/configuration, switch_settings/config
+/cmd/devices/unbind
+    modules: access_points/device_license_status
+/cmd/devices/upgrade
+    modules: ap_settings/configuration, gateway_settings/config, switch_settings/config
+/cmd/eaps/
+    modules: ap_settings/mesh, ap_settings/ports
+/cmd/eaps/move
+    modules: access_points/device_index
+/cmd/eaps/ports/capability
+    modules: ap_settings/ports
+/cmd/eaps/ports/config
+    modules: ap_settings/ports
+/cmd/favorite
+    modules: siteManagement
+/cmd/favorite/cancel
+    modules: siteManagement
+/cmd/fbwifi/v1/config
+    modules: settings/authentication/portal/portal/facebookWifi
+/cmd/fbwifi/v1/update
+    modules: settings/authentication/portal/portal/facebookWifi
+/cmd/fbwifi/v2/config
+    modules: settings/authentication/portal/portal/facebookWifi
+/cmd/fbwifi/v2/update
+    modules: settings/authentication/portal/portal/facebookWifi
+/cmd/gateways/
+    modules: gateway_settings/config/ispUpgrade, gateway_settings/wans
+/cmd/gateways/move
+    modules: gateway_settings/config
+/cmd/getSpeedTestResult
+    modules: settings/wiredNetwork/speedTest
+/cmd/insight/switch/port/clearCounters
+    modules: insight/switch_stats
+/cmd/localusers/
+    modules: hotspot/localUser
+/cmd/migrate/batchMigrate
+    modules: settings/migration/siteMigration
+/cmd/migrate/forget
+    modules: settings/migration/siteMigration
+/cmd/pastConnection/delete
+    modules: insight/past_connection
+/cmd/policyRoutings/modifyIndex
+    modules: settings/transmission/routing
+/cmd/rfPlanning
+    modules: settings/wireless_networks/ai_rf_planning/AIRFPlanning
+/cmd/rfPlanning/cancel
+    modules: settings/wireless_networks/ai_rf_planning/AIRFPlanning
+/cmd/rogueaps/delete
+    modules: insight/neighboring_access_points
+/cmd/rogueaps/scan
+    modules: insight/neighboring_access_points
+/cmd/sessionLimits/modifyIndex
+    modules: settings/transmission/sessionLimit
+/cmd/setting/portal/files/delete
+    modules: settings/authentication/portal/portal
+/cmd/speedTestPure
+    modules: settings/wiredNetwork/speedTest
+/cmd/sslvpn/stats/tunnel/
+    modules: insight/vpn_status
+/cmd/stack/
+    modules: access_points/device_index, switch_settings/config
+/cmd/switches/
+    modules: insight/switch_stats, switch_settings/ports
+/cmd/switches/move
+    modules: switch_settings/config
+/cmd/urlfilterings/modifyIndex
+    modules: settings/firewall_acl/url_filtering
+/cmd/vpn/stats/tunnel/terminate
+    modules: insight/vpn_status
+/dashboard/activeSsids
+    modules: dashboard
+/dashboard/allTabs
+    modules: dashboard
+/dashboard/channels
+    modules: dashboard
+/dashboard/clientActivity
+    modules: dashboard
+/dashboard/clientsAssociationActivities
+    modules: dashboard
+/dashboard/ipsectunnels
+    modules: dashboard
+/dashboard/ispLoad
+    modules: dashboard
+/dashboard/openvpntunnels
+    modules: dashboard
+/dashboard/pastClientNum
+    modules: dashboard
+/dashboard/poeUtilization
+    modules: dashboard
+/dashboard/portstatedetails
+    modules: dashboard
+/dashboard/sslvpntunnels
+    modules: dashboard
+/dashboard/tabs
+    modules: dashboard
+/dashboard/tabs/
+    modules: dashboard
+/dashboard/tabs/config
+    modules: dashboard
+/dashboard/topInterference
+    modules: dashboard
+/dashboard/trafficActivities
+    modules: dashboard
+/dashboard/trafficDistribution
+    modules: dashboard
+/dashboard/vpnTunnelStats
+    modules: dashboard
+/dashboard/wireguard
+    modules: dashboard
+/devices
+    modules: access_points/device_index, settings/services_settings/export_data
+/devices/
+    modules: access_points/device_index, ap_settings/configuration, gateway_settings/config, map/map, map/map/eapConfig, meshAdopt, switch_settings/config
+/devices/${n.device.mac}/available-template
+    modules: access_points/device_profile_status
+/devices/${n.device.mac}/bind-template
+    modules: access_points/device_profile_status
+/devices/${n.device.mac}/unbind-template
+    modules: access_points/device_profile_status
+/devices/add
+    modules: access_points/importSN, setup_cloud
+/devices/add/
+    modules: access_points/importSN, setup_cloud
+/devices/add/success
+    modules: setup_cloud/activeLicense
+/devices/add/verify
+    modules: setup_cloud/addDeviceManually
+/devices/batch/info
+    modules: access_points/device_index
+/devices/pending
+    modules: access_points/device_index
+/devices/topology-info
+    modules: access_points/device_index
+/devices/upgrade/
+    modules: ap_settings/configuration, gateway_settings/config, switch_settings/config
+/eaps/${e}/config/bridge
+    modules: ap_settings/configuration
+/eaps/${l.apSettings.apData.mac}/config/uplink-port
+    modules: ap_settings/ports
+/eaps/${P.apSettings.apData.mac}/config/uplink-port
+    modules: ap_settings/ports
+/eaps/change-role
+    modules: access_points/device_index
+/gateways/
+    modules: gateway_settings/config, gateway_settings/config/ispUpgrade, gateway_settings/config/pinManagement, gateway_settings/config/pinMsg, gateway_settings/ports, settings/wiredNetwork/internet, statistics/performance
+/health/aps/rankingCards
+    modules: health/device
+/health/client/
+    modules: health/client_health_card_details
+/health/clients/data/history
+    modules: health/client, health/client_health_card_details
+/health/clients/data/realtime
+    modules: health/client, health/client_health_card_details
+/health/clients/realtime
+    modules: health/client
+/health/gateways/
+    modules: health/overview, health/wan_health
+/health/overview/clients
+    modules: health/client, health/client_health_details, health/overview
+/health/overview/devices
+    modules: health/device, health/device_health_details, health/overview
+/health/overview/devices/details
+    modules: health/device_health_details
+/health/overview/incident
+    modules: health/client_health_details, health/device_health_details
+/health/switches/rankingCards
+    modules: health/device
+/health/wifi/connections
+    modules: health/wifi
+/health/wifi/health
+    modules: health/overview, health/wifi
+/health/wifi/incident
+    modules: health/overview, health/wifi
+/insight/portForwarding/
+    modules: insight/port_forward_stats
+/insight/switch/detail
+    modules: insight/switch_stats
+/setting
+    modules: ap_settings/mesh, hotspot/vouchersGroup, settings/site_settings
+/setting/available-virtual-wans
+    modules: settings/wiredNetwork/internet/loadBalance
+/setting/capacity
+    modules: dashboard, index/search, insight/vpn_status, settings/services_settings/dhcp_reservation, settings/transmission/nat, settings/vpn/vpnUser
+/setting/disaster
+    modules: dashboard
+/setting/firewall/acls
+    modules: settings/firewall_acl/acl
+/setting/firewall/acls/
+    modules: settings/firewall_acl/acl
+/setting/firewall/attackdefense/default
+    modules: settings/firewall_acl/attack_defence
+/setting/firewall/imbs
+    modules: settings/firewall_acl/ip_mac_binding
+/setting/firewall/imbs/
+    modules: settings/firewall_acl/ip_mac_binding
+/setting/firewall/imbs/batch-delete
+    modules: settings/firewall_acl/ip_mac_binding
+/setting/firewall/macfilter
+    modules: access_points/device_index
+/setting/firewall/timeout/default
+    modules: settings/firewall_acl/firewall
+/setting/firewall/urlfilterings
+    modules: settings/firewall_acl/url_filtering
+/setting/firewall/urlfilterings/
+    modules: settings/firewall_acl/url_filtering
+/setting/lan/networks
+    modules: settings/wiredNetwork/wiredLan/wiredLanNetworks
+/setting/lan/networks-split
+    modules: ap_settings/configuration, ap_settings/ports, switch_settings/config
+/setting/lan/networks/
+    modules: settings/wiredNetwork/wiredLan/wiredLanNetworks
+/setting/lan/networks/batch-delete
+    modules: settings/wiredNetwork/wiredLan/wiredLanNetworks
+/setting/lan/networks/interface
+    modules: ap_settings/configuration, settings/firewall_acl/acl, settings/firewall_acl/ip_mac_binding, settings/services_settings/dhcp_reservation, settings/transmission/bandwidthControl, settings/transmission/sessionLimit, switch_settings/config
+/setting/lan/networks/vlans
+    modules: settings/wiredNetwork/wiredLan/wiredLanNetworks
+/setting/lan/profileOverview
+    modules: switch_settings/ports
+/setting/lan/profiles
+    modules: settings/wiredNetwork/wiredLan/wiredLanProfiles
+/setting/lan/profiles/
+    modules: settings/wiredNetwork/wiredLan/wiredLanProfiles, switch_settings/ports
+/setting/lan/profiles/${n._deleteId}/es
+    modules: settings/wiredNetwork/wiredLan/wiredLanProfiles
+/setting/lan/vlans
+    modules: settings/wiredNetwork/wiredLan/wiredLanNetworks
+/setting/localuser/portals
+    modules: hotspot/localUser
+/setting/network/discardlan
+    modules: settings/wiredNetwork/internet
+/setting/network/mapping
+    modules: settings/wiredNetwork/internet
+/setting/ntp
+    modules: abnormal/settings
+/setting/portal/candidates
+    modules: settings/authentication/portal/portal
+/setting/portals
+    modules: settings/authentication/portal/portal
+/setting/portals/
+    modules: settings/authentication/portal/portal
+/setting/profiles/apns
+    modules: settings/wiredNetwork/internet/internetSetting
+/setting/profiles/groups
+    modules: settings/profiles/groups
+/setting/profiles/groups/
+    modules: settings/profiles/groups
+/setting/profiles/groups/0
+    modules: settings/firewall_acl/url_filtering, settings/transmission/bandwidthControl, settings/transmission/sessionLimit
+/setting/profiles/groups/2
+    modules: settings/wireless_networks, settings/wireless_networks/wifi_network
+/setting/profiles/ppsk
+    modules: settings/profiles/ppsk
+/setting/profiles/ppsk/
+    modules: settings/profiles/ppsk
+/setting/profiles/rateLimits
+    modules: clients/clients_settings/rate_limit_editor, hotspot/localUser, hotspot/vouchersGroup, settings/profiles/rate_limit, settings/profiles/rate_limit/rate_limit_editor, settings/wireless_networks, settings/wireless_networks/wifi_network
+/setting/profiles/rateLimits/
+    modules: clients/clients_settings/rate_limit_editor, settings/profiles/rate_limit, settings/profiles/rate_limit/rate_limit_editor
+/setting/profiles/timeranges
+    modules: settings/firewall_acl/acl, settings/profiles/time_range, settings/profiles/time_range/timeRangeSite, settings/services_settings/poe_schedule, settings/wiredNetwork/internet/loadBalance, settings/wireless_networks, settings/wireless_networks/wifi_network
+/setting/profiles/timeranges/
+    modules: settings/profiles/time_range, settings/profiles/time_range/timeRangeSite
+/setting/qos/switch/dot1p-queue-mappings/all
+    modules: switch_settings/config
+/setting/qos/switch/dscp-dot1p-mappings/all
+    modules: switch_settings/config
+/setting/qos/switch/queue-scheduler-mappings/all
+    modules: switch_settings/config
+/setting/radiusProfiles
+    modules: settings/authentication/mac_auth, settings/authentication/portal/portal, settings/authentication/radius_profile, settings/vpn/ssl_vpn/vpn_server, settings/wireless_networks, settings/wireless_networks/wifi_network
+/setting/radiusProfiles/
+    modules: settings/authentication/radius_profile
+/setting/service/ddns
+    modules: settings/services_settings/ddns
+/setting/service/ddns/
+    modules: settings/services_settings/ddns
+/setting/service/dhcp
+    modules: settings/services_settings/dhcp_reservation
+/setting/service/dhcp/
+    modules: settings/services_settings/dhcp_reservation
+/setting/service/poeSchedules
+    modules: settings/services_settings/poe_schedule
+/setting/service/poeSchedules/
+    modules: settings/services_settings/poe_schedule
+/setting/service/rebootSchedules
+    modules: settings/services_settings/reboot_schedule
+/setting/service/rebootSchedules/
+    modules: settings/services_settings/reboot_schedule
+/setting/ssids
+    modules: settings/firewall_acl/acl, settings/firewall_acl/url_filtering
+/setting/ssids/tip
+    modules: settings/wireless_networks, settings/wireless_networks/wifi_network
+/setting/sslvpn/briefresourcegroups
+    modules: settings/vpn/ssl_vpn/vpn_user_group
+/setting/sslvpn/briefresources
+    modules: settings/vpn/ssl_vpn/vpn_source_management
+/setting/sslvpn/briefusergroups
+    modules: settings/vpn/ssl_vpn/vpn_user_group, settings/vpn/ssl_vpn/vpn_user_list
+/setting/sslvpn/lockedtunnels
+    modules: settings/vpn/ssl_vpn/vpn_lock_user
+/setting/sslvpn/lockedtunnels/
+    modules: settings/vpn/ssl_vpn/vpn_lock_user
+/setting/sslvpn/resourcegroups
+    modules: settings/vpn/ssl_vpn/vpn_source_management
+/setting/sslvpn/resourcegroups/
+    modules: settings/vpn/ssl_vpn/vpn_source_management
+/setting/sslvpn/resources
+    modules: settings/vpn/ssl_vpn/vpn_source_management
+/setting/sslvpn/resources/
+    modules: settings/vpn/ssl_vpn/vpn_source_management
+/setting/sslvpn/usergroups
+    modules: settings/vpn/ssl_vpn/vpn_user_group
+/setting/sslvpn/usergroups/
+    modules: settings/vpn/ssl_vpn/vpn_user_group, settings/vpn/ssl_vpn/vpn_user_list
+/setting/sslvpn/users
+    modules: settings/vpn/ssl_vpn/vpn_user_list
+/setting/sslvpn/users/
+    modules: settings/vpn/ssl_vpn/vpn_user_list
+/setting/transmission/bandwidthControls
+    modules: settings/transmission/bandwidthControl
+/setting/transmission/bandwidthControls/
+    modules: settings/transmission/bandwidthControl
+/setting/transmission/otonats
+    modules: settings/transmission/nat/oneToOne
+/setting/transmission/otonats/
+    modules: settings/transmission/nat/oneToOne
+/setting/transmission/policyRoutings
+    modules: settings/transmission/routing
+/setting/transmission/policyRoutings/
+    modules: settings/transmission/routing
+/setting/transmission/portForwardings
+    modules: settings/transmission/nat/portForwarding
+/setting/transmission/portForwardings/
+    modules: settings/transmission/nat/portForwarding
+/setting/transmission/sessionLimits
+    modules: settings/transmission/sessionLimit
+/setting/transmission/sessionLimits/
+    modules: settings/transmission/sessionLimit
+/setting/transmission/staticRoutings
+    modules: settings/transmission/routing
+/setting/transmission/staticRoutings/
+    modules: settings/transmission/routing
+/setting/virtual-wans
+    modules: settings/wiredNetwork/internet/internetSetting
+/setting/virtual-wans/
+    modules: settings/wiredNetwork/virtualWan
+/setting/virtual-wans/{virtualWanId}
+    modules: settings/wiredNetwork/virtualWan
+/setting/virtual-wans/delete-check
+    modules: settings/wiredNetwork/virtualWan
+/setting/voucher/portals
+    modules: hotspot/vouchersGroup
+/setting/vpns
+    modules: settings/vpn/vpn
+/setting/vpns/
+    modules: settings/vpn/vpn
+/setting/vpns/greTunnel
+    modules: settings/wireless_networks, settings/wireless_networks/wifi_network
+/setting/vpns/ipsec-failovers
+    modules: settings/vpn/ipsecFailover
+/setting/vpns/ipsec-failovers/
+    modules: settings/vpn/ipsecFailover
+/setting/vpns/ipsec-failovers/candidates
+    modules: settings/vpn/ipsecFailover
+/setting/vpns/pptpAndL2tp
+    modules: settings/firewall_acl/acl
+/setting/vpns/users
+    modules: settings/vpn/vpnUser
+/setting/vpns/users/
+    modules: settings/vpn/vpnUser
+/setting/wan-ports
+    modules: settings/firewall_acl/ip_mac_binding, settings/vpn/vpn, settings/wiredNetwork/virtualWan
+/setting/wan/changemodel
+    modules: settings/wiredNetwork/internet
+/setting/wan/map
+    modules: settings/wiredNetwork/internet
+/setting/wan/networks
+    modules: settings/firewall_acl/acl, settings/wiredNetwork/internet, settings/wiredNetwork/wiredLan/wiredLanNetworks
+/setting/wan/support
+    modules: settings/wiredNetwork/internet
+/setting/wanlanstatus
+    modules: settings/vpn/vpnUser
+/setting/wlans
+    modules: settings/wireless_networks, settings/wireless_networks/wifi_network
+/setting/wlans/
+    modules: settings/wireless_networks, settings/wireless_networks/wifi_network
+/sites/${i}/autoRenew
+    modules: license/licenseManagement
+/sites/${n}/autoRenew
+    modules: license/licenseInfo
+/stat/olts/
+    modules: statistics/performance
+/stat/switches/
+    modules: statistics/switch_statistics
+/stat/wanSpeeds
+    modules: statistics/speed_test_statistics
+/static-ip
+    modules: ap_settings/configuration
+/static/template-device-key.zip
+    modules: access_points/importSN
+/static/template.zip
+    modules: access_points/importSN, setup_cloud
+/staticRoutings
+    modules: switch_settings/config
+/staticRoutings/
+    modules: switch_settings/config
+/status
+    modules: access_points/importSN, ap_settings/configuration, gateway_settings/config, settings/vpn/vpn, settings/wiredNetwork/virtualWan, setup_cloud, switch_settings/config
+/switches/
+    modules: switch_settings/config, switch_settings/ports
+/switches/${c.switchData.mac}/config/services
+    modules: switch_settings/config
+/switches/es/
+    modules: switch_settings/config, switch_settings/ports
+/switches/es/${c.switchData.mac}/config/service
+    modules: switch_settings/config
+/switches/es/${c.switchData.mac}/config/services/networkOverview
+    modules: switch_settings/config

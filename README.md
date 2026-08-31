@@ -93,13 +93,23 @@ Your controller may differ. `genericApiCall` is the escape hatch for anything no
 
 ### Discovering endpoints for your firmware
 
-The controller ships no OpenAPI spec, but its web UI declares every endpoint it uses. To produce an endpoint list for your exact firmware:
+The controller ships no OpenAPI spec, but its web UI declares every endpoint it calls. Dump the full internal API surface for your firmware — no credentials needed:
 
-1. Fetch `https://<controller>/` and find `js/su/configJson-<hash>.js` — the module manifest
-2. Every module is listed as `./modules/<path>/controllers-<hash>.js`, served from `/modules/...`
-3. Download them and grep for path literals
+```bash
+node scripts/dump-endpoints.mjs https://192.168.1.10
+```
 
-That is how the schedule endpoints in this fork were found.
+```
+controller: 6.2.14.12 (api v3)
+manifest:   /js/su/configJson-9cdc9a57dd.js
+modules:    225
+endpoints:  224
+written:    docs/endpoints/controller-api3-6.2.14.12.txt
+```
+
+Dumps are committed per firmware under [`docs/endpoints/`](docs/endpoints/). The method, the Open API vs internal API distinction, and the error codes that tell a missing endpoint (`-1600`) from a wrong argument (`-1001`) are all in **[docs/endpoint-discovery.md](docs/endpoint-discovery.md)**. That is how the schedule endpoints in this fork were found.
+
+If you run different hardware or firmware, a dump and a compatibility correction is the most useful contribution you can make — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Tools
 
@@ -194,6 +204,48 @@ That is how the schedule endpoints in this fork were found.
 | Tool | Description |
 |---|---|
 | `genericApiCall` | Invoke any Omada Open API endpoint directly |
+
+## Documentation
+
+| Document | Contents |
+|---|---|
+| [CHANGELOG.md](CHANGELOG.md) | Release history, with the controller firmware each release was verified against |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Dev setup, adding tools, reporting a new firmware version |
+| [docs/endpoint-discovery.md](docs/endpoint-discovery.md) | How to enumerate a controller's API surface, and how to read its error codes |
+| [docs/endpoints/](docs/endpoints/) | Committed endpoint dumps, one per firmware version |
+
+## Updating from upstream
+
+This fork keeps `upstream` pointed at [realtydev/omada-mcp](https://github.com/realtydev/omada-mcp). After cloning:
+
+```bash
+git remote add upstream https://github.com/realtydev/omada-mcp.git   # if not already set
+git fetch upstream
+git log --oneline HEAD..upstream/main        # what is new upstream
+```
+
+Merge and validate:
+
+```bash
+git checkout -b merge-upstream
+git merge upstream/main
+npm install && npm run check && npm test
+```
+
+Things to watch when merging:
+
+- **`src/tools/index.ts`** conflicts on nearly every upstream change, since both sides add imports and `register*` calls. Keep both sets.
+- **`tests/tools/index.test.ts`** asserts an exact tool manifest. Any tool added on either side must be added to `expectedTools`, or the suite fails.
+- **New upstream tools may not work on your firmware.** Check them against your endpoint dump and update the [compatibility matrix](#controller-compatibility) rather than assuming they work.
+- **Re-run the endpoint dump after a controller firmware upgrade**, not just after a code merge — TP-Link moves these paths between releases. Commit the new dump and add a firmware row to the changelog.
+
+To update the server itself after pulling:
+
+```bash
+npm install && npm run build
+```
+
+then restart your MCP client so it reloads the tool list.
 
 ## Development
 
