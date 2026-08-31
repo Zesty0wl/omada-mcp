@@ -160,6 +160,38 @@ export class ScheduleOperations {
         return req.ensureSuccess(response);
     }
 
+    // ---------------------------------------------------------- RF planning
+
+    /**
+     * Get the AI RF Planning configuration for a site.
+     *
+     * RF Planning is what earlier Omada versions called WLAN Optimization: it scans
+     * the RF environment and deploys channel, channel width, band and power
+     * assignments. It carries its own schedule (`scheduleEnable` + `occurrence`)
+     * rather than living in the service schedule collections.
+     */
+    public async getRfPlanning(siteId?: string): Promise<Record<string, unknown>> {
+        const req = this.requireInternal('getRfPlanning');
+        const resolvedSiteId = this.site.resolveSiteId(siteId);
+        const response = await req.get<OmadaApiResponse<Record<string, unknown>>>(`/sites/${encodeURIComponent(resolvedSiteId)}/rfPlanning`);
+        return req.ensureSuccess(response);
+    }
+
+    /*
+     * Writing RF Planning config is deliberately not implemented.
+     *
+     * On OC200 firmware 6.2.14.12 the read path is GET /sites/{siteId}/rfPlanning,
+     * but no write path has been confirmed. PUT/POST/PATCH on that path, on
+     * /cmd/rfPlanning, and on several other bases all return -1600. The one
+     * candidate that exists is PATCH /sites/{siteId}/setting/wlans/rfPlanning,
+     * which returns -1001 "must not be null" for every payload tried, including
+     * the exact field list the web UI assembles and the unmodified current object.
+     *
+     * Rather than ship a write that silently fails -- or worse, half-applies and
+     * shifts a scheduled task -- configure RF Planning in the web UI until the
+     * real request has been captured from the browser. See docs/endpoint-discovery.md.
+     */
+
     // --------------------------------------------------------- site settings
 
     /**

@@ -37,6 +37,9 @@ First release of the [Zesty0wl](https://github.com/Zesty0wl/omada-mcp) fork, tak
 - **[`docs/endpoint-discovery.md`](docs/endpoint-discovery.md)** — the discovery method, the Open API vs internal API distinction, and the error codes that distinguish a missing endpoint (`-1600`) from a wrong argument (`-1001`).
 - **[`docs/endpoints/controller-api3-6.2.14.12.txt`](docs/endpoints/controller-api3-6.2.14.12.txt)** — 224 internal endpoints scraped from 225 UI modules.
 - `PUT` and `PATCH` methods on `InternalRequestHandler`.
+- **`getRfPlanning`** — reads the AI RF Planning configuration (what earlier Omada versions called WLAN Optimization): which bands are re-planned, whether channel width, band and power are deployed, excluded APs, and its own `scheduleEnable` + `occurrence`.
+  *Firmware 6.2.14.12:* RF Planning carries its schedule on its own object at `/rfPlanning`, not in the `setting/service/*` schedule collections — which is why it is easy to miss when auditing what is scheduled on a site.
+  **Read only.** No write path has been confirmed: `PUT`/`POST`/`PATCH` on `/sites/{siteId}/rfPlanning`, on `/cmd/rfPlanning` and on several other bases all return `-1600`. The one path that exists, `PATCH /sites/{siteId}/setting/wlans/rfPlanning`, returns `-1001 "must not be null"` for every payload tried — including the exact field list the web UI assembles, and the unmodified current object. Configure RF Planning in the web UI until the real request is captured from the browser.
 - `tests/omadaClient/schedule.test.ts` — 18 tests covering path construction, id encoding, the missing-credentials error, controller error propagation, and `setSiteTimeZone`'s region/scenario handling. Raises `schedule.ts` coverage from 2% to 88% and the project total from 65% to 69%.
 
 ### Changed

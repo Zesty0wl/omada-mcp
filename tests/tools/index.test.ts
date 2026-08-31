@@ -46,6 +46,7 @@ describe('tools/index', () => {
                 'getLanNetworkList',
                 'getLanProfileList',
                 'getPortForwardingStatus',
+                'getRfPlanning',
                 'getSiteSettings',
                 'getSsidDetail',
                 'getSsidList',

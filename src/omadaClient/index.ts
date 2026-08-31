@@ -413,6 +413,11 @@ export class OmadaClient {
         return await this.scheduleOps.listTimeRanges(siteId);
     }
 
+    // AI RF Planning (internal web UI API)
+    public async getRfPlanning(siteId?: string): Promise<Record<string, unknown>> {
+        return await this.scheduleOps.getRfPlanning(siteId);
+    }
+
     // Site settings (internal web UI API)
     public async getSiteSettings(siteId?: string): Promise<Record<string, unknown>> {
         return await this.scheduleOps.getSiteSettings(siteId);

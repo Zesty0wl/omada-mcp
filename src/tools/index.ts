@@ -26,6 +26,7 @@ import { registerGetInternetInfoTool } from './getInternetInfo.js';
 import { registerGetLanNetworkListTool } from './getLanNetworkList.js';
 import { registerGetLanProfileListTool } from './getLanProfileList.js';
 import { registerGetPortForwardingStatusTool } from './getPortForwardingStatus.js';
+import { registerGetRfPlanningTool } from './getRfPlanning.js';
 import { registerGetSiteSettingsTool } from './getSiteSettings.js';
 import { registerGetSsidDetailTool } from './getSsidDetail.js';
 import { registerGetSsidListTool } from './getSsidList.js';
@@ -152,6 +153,9 @@ export function registerAllTools(server: McpServer, client: OmadaClient): void {
     registerUpdatePoeScheduleTool(server, client);
     registerDeletePoeScheduleTool(server, client);
     registerListTimeRangesTool(server, client);
+
+    // AI RF Planning tools (internal web UI API)
+    registerGetRfPlanningTool(server, client);
 
     // Site settings tools (internal web UI API)
     registerGetSiteSettingsTool(server, client);
