@@ -130,7 +130,9 @@ If you run different hardware or firmware, a dump and a compatibility correction
 | `updateSiteSettings` | Patch individual site settings sections |
 | `setSiteTimeZone` | Set the site timezone, handling the required `region`/`scenario` fields |
 
-> **Check your timezone before trusting any schedule.** Controllers commonly ship set to `UTC` with DST disabled. A site left that way runs every scheduled task an hour early during summer time — a "06:00" reboot fires at 07:00 local. `setSiteTimeZone` with an IANA zone such as `Europe/London` fixes reboot, PoE and WLAN schedules together.
+> **Check your timezone *and* your DST setting before trusting any schedule.** Controllers commonly ship set to `UTC`. Worse, **Omada treats daylight saving as a separate setting from the timezone** — `site.dst.enable`, with manual recurring start/end rules — and it is off by default. Setting an IANA zone such as `Europe/London` does *not* on its own make schedules observe summer time: the controller stays on the standard offset year-round, so a "06:00" reboot fires at 07:00 wall-clock from March to October.
+>
+> Verify with `getSiteSettings` (check `site.timeZone` **and** `site.dst.enable`) and with `listRebootSchedules` — a schedule's `nextExecute` is a UTC epoch, and `notInDst: true` confirms DST is not being applied. `setSiteTimeZone` sets the zone; configuring the DST rules must currently be done in the web UI under Site Settings.
 
 ### Read tools
 

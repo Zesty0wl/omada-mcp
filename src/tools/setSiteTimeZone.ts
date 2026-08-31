@@ -15,8 +15,11 @@ export function registerSetSiteTimeZoneTool(server: McpServer, client: OmadaClie
         {
             description:
                 'Set the site timezone, handling the region and scenario fields the controller requires alongside it. ' +
-                'A site left on "UTC" runs every scheduled task an hour early during summer time, so setting a real ' +
-                'IANA zone fixes reboot, PoE and WLAN schedules in one go. Requires OMADA_WEB_USERNAME/OMADA_WEB_PASSWORD.',
+                'IMPORTANT: on firmware tested, the timezone alone does NOT make schedules observe daylight saving. ' +
+                'Omada keeps DST as a separate site setting (site.dst.enable, with manual recurring start/end rules) ' +
+                'which is off by default, so a controller runs on standard offset year-round and a "06:00" schedule ' +
+                'fires at 07:00 wall-clock during summer time. Check site.dst via getSiteSettings, and treat a ' +
+                "schedule's notInDst flag as confirmation. Requires OMADA_WEB_USERNAME/OMADA_WEB_PASSWORD.",
             inputSchema: timeZoneSchema.shape,
         },
         wrapToolHandler('setSiteTimeZone', async ({ siteId, timeZone }) => toToolResult(await client.setSiteTimeZone(timeZone, siteId)))
