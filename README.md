@@ -1,12 +1,30 @@
 # Omada MCP Server
 
-Full CRUD MCP server for TP-Link Omada SDN controllers. Exposes 60+ tools for reading, writing, and managing sites, devices, clients, networks, switch ports, firewalls, and more — all via the Model Context Protocol.
+MCP server for TP-Link Omada SDN controllers. Exposes 72 tools for reading and managing sites, devices, clients, networks, switch ports, firewalls, schedules and site settings over the Model Context Protocol.
 
-## Quick Start
+## Lineage and attribution
 
-### Using with Claude Code / Claude Desktop (stdio)
+This is a fork of a fork. Credit where it is due:
 
-Add to your MCP client configuration:
+| Repo | Contribution |
+|---|---|
+| [MiguelTVMS/tplink-omada-mcp](https://github.com/MiguelTVMS/tplink-omada-mcp) | The original MCP server — transport, auth, tool scaffolding, read tools |
+| [realtydev/omada-mcp](https://github.com/realtydev/omada-mcp) | Added full CRUD, switch port management, batch operations, cable testing, and the internal web UI API fallback for firewall ACLs. Last updated February 2026 |
+| **[Zesty0wl/omada-mcp](https://github.com/Zesty0wl/omada-mcp)** (this repo) | Forked August 2026 from `realtydev` @ `376e242`. Adds scheduling and site settings, extends the internal-API fallback, and documents actual controller compatibility |
+
+### What this fork adds
+
+**New: scheduling and site settings (12 tools).** Reboot schedules, PoE schedules, time range profiles, and site settings including timezone. None of these exist in the Open API; they are internal-API only.
+
+**Extended internal-API fallback.** Upstream routes only firewall ACLs through the internal web UI API. This fork extends that to `getSwitchPorts` and `listEvents`, which return `-1600 Unsupported request path` on the Open API of every controller tested.
+
+**Documented `OMADA_WEB_USERNAME` / `OMADA_WEB_PASSWORD`.** Upstream reads these in `src/config.ts` but never documents them, so the internal-API code path is effectively unreachable unless you read the source. They are documented below.
+
+**Honest compatibility matrix.** Upstream's README lists 60+ tools without noting that a large fraction return `-1600` on common hardware. See [Controller compatibility](#controller-compatibility).
+
+**Test fixes.** `tests/tools/index.test.ts` asserted a stale 45-tool manifest against 60 registered tools, so the suite failed on a clean checkout. The manifest now matches the registered set.
+
+## Quick start
 
 ```json
 {
@@ -15,11 +33,13 @@ Add to your MCP client configuration:
       "command": "node",
       "args": ["/path/to/omada-mcp/dist/index.js"],
       "env": {
-        "OMADA_BASE_URL": "https://your-omada-controller.local",
+        "OMADA_BASE_URL": "https://192.168.1.10",
         "OMADA_CLIENT_ID": "your-client-id",
         "OMADA_CLIENT_SECRET": "your-client-secret",
         "OMADA_OMADAC_ID": "your-omadac-id",
         "OMADA_SITE_ID": "your-site-id",
+        "OMADA_WEB_USERNAME": "controller-login",
+        "OMADA_WEB_PASSWORD": "controller-password",
         "OMADA_STRICT_SSL": "false"
       }
     }
@@ -27,85 +47,99 @@ Add to your MCP client configuration:
 }
 ```
 
-### Using Docker
+Build first with `npm install && npm run build`.
 
-```json
-{
-  "mcpServers": {
-    "omada": {
-      "command": "docker",
-      "args": [
-        "run", "-i", "--rm",
-        "-e", "OMADA_BASE_URL=https://your-omada-controller.local",
-        "-e", "OMADA_CLIENT_ID=your-client-id",
-        "-e", "OMADA_CLIENT_SECRET=your-client-secret",
-        "-e", "OMADA_OMADAC_ID=your-omadac-id",
-        "-e", "OMADA_SITE_ID=your-site-id",
-        "-e", "OMADA_STRICT_SSL=false",
-        "jmtvms/tplink-omada-mcp:latest"
-      ]
-    }
-  }
-}
-```
+### Getting your credentials
 
-### Docker HTTP Server
+`OMADA_CLIENT_ID` / `OMADA_CLIENT_SECRET` come from **Settings → Platform Integration → Open API → Add New App**. Choose **Client Mode** (the server only ever uses the `client_credentials` grant — a redirect URL is never used) and grant a role with write access; read-only blocks every config tool.
+
+`OMADA_OMADAC_ID` is available unauthenticated:
 
 ```bash
-docker run -d \
-  --env-file .env \
-  -e MCP_SERVER_USE_HTTP=true \
-  -e MCP_HTTP_BIND_ADDR=0.0.0.0 \
-  -p 3000:3000 \
-  jmtvms/tplink-omada-mcp:latest
+curl -sk https://<controller>/api/info
 ```
 
-Available at `http://localhost:3000/mcp` (stream) or `http://localhost:3000/sse` (SSE).
+`OMADA_SITE_ID` is optional — omit it and call `listSites` to find it.
 
-## Environment Variables
-
-### Omada Controller
+## Environment variables
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `OMADA_BASE_URL` | Yes | - | Omada controller URL |
-| `OMADA_CLIENT_ID` | Yes | - | OAuth client ID |
-| `OMADA_CLIENT_SECRET` | Yes | - | OAuth client secret |
-| `OMADA_OMADAC_ID` | Yes | - | Controller ID (omadacId) |
+| `OMADA_BASE_URL` | Yes | - | Controller URL |
+| `OMADA_CLIENT_ID` | Yes | - | Open API client ID |
+| `OMADA_CLIENT_SECRET` | Yes | - | Open API client secret |
+| `OMADA_OMADAC_ID` | Yes | - | Controller ID |
 | `OMADA_SITE_ID` | No | - | Default site ID |
-| `OMADA_STRICT_SSL` | No | `true` | SSL verification (`false` for self-signed) |
+| `OMADA_WEB_USERNAME` | No | - | **Controller web UI login.** Enables the internal API — required for schedules, site settings, firewall ACLs, IP groups, switch ports and events |
+| `OMADA_WEB_PASSWORD` | No | - | Controller web UI password |
+| `OMADA_STRICT_SSL` | No | `true` | Set `false` for self-signed certificates |
 | `OMADA_TIMEOUT` | No | `30000` | Request timeout (ms) |
 
-### MCP Server
+Server transport variables (`MCP_SERVER_USE_HTTP`, `MCP_HTTP_PORT`, `MCP_HTTP_BIND_ADDR`, `MCP_SERVER_LOG_LEVEL`, `MCP_SERVER_LOG_FORMAT`, `MCP_SERVER_STATEFUL`, `MCP_HTTP_TRANSPORT`) are unchanged from upstream.
 
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `MCP_SERVER_LOG_LEVEL` | No | `info` | `debug`, `info`, `warn`, `error`, `silent` |
-| `MCP_SERVER_LOG_FORMAT` | No | `plain` | `plain`, `json`, `gcp-json` |
-| `MCP_SERVER_USE_HTTP` | No | `false` | Enable HTTP transport |
-| `MCP_SERVER_STATEFUL` | No | `false` | Stateful sessions |
-| `MCP_HTTP_PORT` | No | `3000` | HTTP port |
-| `MCP_HTTP_TRANSPORT` | No | `stream` | `stream` or `sse` |
-| `MCP_HTTP_BIND_ADDR` | No | `127.0.0.1` | Bind address |
+## Controller compatibility
+
+Omada controllers expose two APIs: the documented **Open API** (`/openapi/v1/...`, OAuth) and the undocumented **internal web UI API** (`/{omadacId}/api/v2/...`, cookie + CSRF). Which endpoints exist on which varies by controller model and firmware — the Open API surface is considerably smaller than its documentation suggests.
+
+Verified against **OC200 hardware controller, firmware 6.2.14.12** (ER7206 gateway, T1600G-28PS and SG2008P switches, EAP610 access points):
+
+**Work over the Open API alone** — `listSites` `listDevices` `getDevice` `getSwitch` `listClients` `getClient` `listDevicesStats` `listMostActiveClients` `listClientsActivity` `listClientsPastConnections` `getInternetInfo` `getLanNetworkList` `getLanProfileList` `getWlanGroupList` `getSsidList` `getSsidDetail` `getFirewallSetting` `searchDevices` `rebootDevice` `blockClient` `unblockClient` `reconnectClient` `setDeviceLed` `adoptDevice` and the LAN network/profile write tools.
+
+**Require `OMADA_WEB_USERNAME` / `OMADA_WEB_PASSWORD`** — all schedule and site settings tools, `listFirewallAcls`, `createFirewallAcl`, `deleteFirewallAcl`, `listIpGroups`, `getSwitchPorts`, `listEvents`.
+
+**Known not to work on this hardware, on either API** — `listRoutes`, `getPortForwardingStatus`, `getFirmwareDetails`, `startFirmwareUpgrade`, `getCableTestResults`, `startCableTest`, `listLogs`, `getSwitchStackDetail`, and all switch port *write* tools (`updateSwitchPort`, `setSwitchPort*`, `batchSetSwitchPort*`). The Open API paths return `-1600`; equivalent internal paths were not located. Switch port configuration must be done in the web UI. Port *state* is still readable via `getSwitch` or `getSwitchPorts`.
+
+Your controller may differ. `genericApiCall` is the escape hatch for anything not covered.
+
+### Discovering endpoints for your firmware
+
+The controller ships no OpenAPI spec, but its web UI declares every endpoint it uses. To produce an endpoint list for your exact firmware:
+
+1. Fetch `https://<controller>/` and find `js/su/configJson-<hash>.js` — the module manifest
+2. Every module is listed as `./modules/<path>/controllers-<hash>.js`, served from `/modules/...`
+3. Download them and grep for path literals
+
+That is how the schedule endpoints in this fork were found.
 
 ## Tools
 
-### Read Tools
+### Scheduling and site settings (new in this fork — internal API)
+
+| Tool | Description |
+|---|---|
+| `listRebootSchedules` | List reboot schedules, their target devices and next execution time |
+| `createRebootSchedule` | Create a daily/weekly/monthly reboot schedule for specific devices |
+| `updateRebootSchedule` | Replace an existing reboot schedule |
+| `deleteRebootSchedule` | Delete a reboot schedule |
+| `listPoeSchedules` | List PoE schedules |
+| `createPoeSchedule` | Create a PoE schedule (power-cycles switch ports on a time range) |
+| `updatePoeSchedule` | Replace an existing PoE schedule |
+| `deletePoeSchedule` | Delete a PoE schedule |
+| `listTimeRanges` | List time range profiles — the primitive PoE/WLAN/ACL schedules bind to |
+| `getSiteSettings` | Timezone, DST, NTP, mesh, band steering, airtime fairness, roaming, LED, auto-upgrade |
+| `updateSiteSettings` | Patch individual site settings sections |
+| `setSiteTimeZone` | Set the site timezone, handling the required `region`/`scenario` fields |
+
+> **Check your timezone before trusting any schedule.** Controllers commonly ship set to `UTC` with DST disabled. A site left that way runs every scheduled task an hour early during summer time — a "06:00" reboot fires at 07:00 local. `setSiteTimeZone` with an IANA zone such as `Europe/London` fixes reboot, PoE and WLAN schedules together.
+
+### Read tools
 
 | Tool | Description |
 |---|---|
 | `listSites` | List all sites on the controller |
 | `listDevices` | List devices for a site |
 | `listClients` | List active clients for a site |
-| `getDevice` | Get details for a specific device |
-| `getClient` | Get details for a specific client |
-| `getSwitchStackDetail` | Get switch stack configuration and status |
+| `getDevice` | Details for a specific device |
+| `getClient` | Details for a specific client |
+| `getSwitch` | Full switch info including `portList` |
+| `getSwitchPorts` | All ports for a switch (internal API) |
+| `getSwitchStackDetail` | Switch stack configuration and status |
 | `searchDevices` | Search devices globally across all sites |
 | `listDevicesStats` | Device statistics with pagination and filtering |
-| `listMostActiveClients` | Top clients sorted by traffic |
-| `listClientsActivity` | Client activity time-series data |
+| `listMostActiveClients` | Top clients by traffic |
+| `listClientsActivity` | Client activity time series |
 | `listClientsPastConnections` | Historical client connections |
-| `getThreatList` | Security threat list with filtering |
+| `getThreatList` | Security threat list |
 | `getInternetInfo` | Internet / WAN configuration |
 | `getPortForwardingStatus` | Port forwarding rules (User/UPnP) |
 | `getLanNetworkList` | LAN networks and VLAN settings |
@@ -113,87 +147,73 @@ Available at `http://localhost:3000/mcp` (stream) or `http://localhost:3000/sse`
 | `getWlanGroupList` | WLAN groups |
 | `getSsidList` | SSIDs in a WLAN group |
 | `getSsidDetail` | Detailed SSID configuration |
-| `getFirewallSetting` | Firewall rules and policies |
-| `getSwitchPorts` | All ports for a switch (status, PoE, speed, STP) |
+| `getFirewallSetting` | Firewall settings and policies |
 | `getFirmwareDetails` | Firmware info for a device |
-| `listEvents` | Paginated site events |
+| `listEvents` | Paginated site events (internal API) |
 | `listLogs` | Paginated site logs |
-| `listFirewallAcls` | Firewall ACL rules |
+| `listFirewallAcls` | Firewall ACL rules (internal API) |
+| `listIpGroups` | IP/port groups for ACL rules (internal API) |
 | `listRoutes` | Static routes |
-| `getSwitch` | Full switch info including portList array |
-| `getCableTestResults` | Cable test results for a switch |
+| `getCableTestResults` | Cable test results |
 | `getSwitchNetworks` | Switch VLAN trunking configuration |
 
-### Write Tools
+### Write tools
 
 | Tool | Description |
 |---|---|
-| `createLanNetwork` | Create a LAN network |
-| `updateLanNetwork` | Update a LAN network |
-| `deleteLanNetwork` | Delete a LAN network |
-| `createLanProfile` | Create a LAN profile |
-| `updateLanProfile` | Update a LAN profile |
+| `createLanNetwork` / `updateLanNetwork` / `deleteLanNetwork` | Manage LAN networks |
+| `createLanProfile` / `updateLanProfile` | Manage LAN profiles |
 | `updateFirewallSetting` | Update firewall settings |
-| `createFirewallAcl` | Create a firewall ACL rule |
-| `deleteFirewallAcl` | Delete a firewall ACL rule |
-| `updateSwitchPort` | Update switch port config (profile, PoE, speed, STP) |
+| `createFirewallAcl` / `deleteFirewallAcl` | Manage firewall ACL rules (internal API) |
+| `updateSwitchPort` | Update switch port configuration |
 | `updateClient` | Update client settings |
-| `setSwitchNetworks` | Set switch VLAN trunking configuration |
+| `setSwitchNetworks` | Set switch VLAN trunking |
 
-### Switch Port Tools
+### Switch port tools
 
 | Tool | Description |
 |---|---|
-| `setSwitchPortProfile` | Assign a LAN profile to a single port |
-| `setSwitchPortPoe` | Enable/disable PoE on a single port |
-| `setSwitchPortName` | Set name on a single port |
-| `setSwitchPortStatus` | Enable/disable a single port |
-| `setSwitchPortProfileOverride` | Enable/disable profile override on a single port |
-| `batchSetSwitchPortProfile` | Batch profile override on multiple ports |
-| `batchSetSwitchPortPoe` | Batch PoE on multiple ports |
-| `batchSetSwitchPortStatus` | Batch enable/disable multiple ports |
-| `batchSetSwitchPortName` | Batch set names on multiple ports |
-| `startCableTest` | Start cable test on a switch |
+| `setSwitchPortProfile` / `setSwitchPortPoe` / `setSwitchPortName` / `setSwitchPortStatus` / `setSwitchPortProfileOverride` | Single-port configuration |
+| `batchSetSwitchPortProfile` / `batchSetSwitchPortPoe` / `batchSetSwitchPortStatus` / `batchSetSwitchPortName` | Multi-port configuration |
+| `startCableTest` | Start a cable test on a switch |
 
-### Action Tools
+### Action tools
 
 | Tool | Description |
 |---|---|
 | `rebootDevice` | Reboot a device |
 | `adoptDevice` | Adopt a device |
-| `blockClient` | Block a client |
-| `unblockClient` | Unblock a client |
+| `blockClient` / `unblockClient` | Block or unblock a client |
 | `reconnectClient` | Reconnect a client |
-| `setDeviceLed` | Set device LED setting |
-| `startFirmwareUpgrade` | Start firmware upgrade |
-| `setGatewayWanConnect` | Connect/disconnect gateway WAN port |
+| `setDeviceLed` | Set device LED behaviour |
+| `startFirmwareUpgrade` | Start a firmware upgrade |
+| `setGatewayWanConnect` | Connect or disconnect a gateway WAN port |
 
 ### Generic
 
 | Tool | Description |
 |---|---|
-| `genericApiCall` | Invoke any Omada OpenAPI endpoint directly |
+| `genericApiCall` | Invoke any Omada Open API endpoint directly |
 
 ## Development
 
 ```bash
 npm install
-npm run dev          # Live reload via tsx
-npm run build        # Compile TypeScript
-npm run check        # Lint + type check
-npm start            # Run compiled server (stdio)
+npm run dev      # live reload via tsx
+npm run build    # compile TypeScript
+npm run check    # lint + type check
+npm test         # vitest
+npm start        # run compiled server (stdio)
 ```
 
-### Docker
+## Security notes
 
-```bash
-npm run docker:build   # Build image
-npm run docker:run     # Run with .env file
-```
+`OMADA_WEB_PASSWORD` is a full controller administrator credential — the internal API is the web UI's own API and inherits that account's privileges. Anything holding this value can reconfigure your network. Keep it out of version control, and give it its own password rather than reusing one shared with Wi-Fi or other services.
 
-## Credits
+## Known issues inherited from upstream
 
-Forked from [jmtvms/tplink-omada-mcp](https://github.com/jmtvms/tplink-omada-mcp). Extended with full CRUD operations, switch port management, batch operations, and cable testing by [realtydev/omada-mcp](https://github.com/realtydev/omada-mcp).
+- `src/tools/getDevicesStats.ts` is dead code: it duplicates `listDevicesStats.ts`, exports an identically named function, and is never imported.
+- Several tools listed in upstream's README do not work on common hardware. See [Controller compatibility](#controller-compatibility).
 
 ## License
 

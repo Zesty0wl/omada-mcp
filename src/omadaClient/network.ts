@@ -211,6 +211,17 @@ export class NetworkOperations {
      */
     public async listEvents(siteId?: string, page = 1, pageSize = 10): Promise<PaginatedResult<unknown>> {
         const resolvedSiteId = this.site.resolveSiteId(siteId);
+
+        if (this.hasInternalApi) {
+            logger.info('Using internal API for listEvents');
+            const path = `/sites/${encodeURIComponent(resolvedSiteId)}/events`;
+            const response = await this.internalRequest!.get<OmadaApiResponse<PaginatedResult<unknown>>>(path, {
+                currentPage: page,
+                currentPageSize: pageSize,
+            });
+            return this.internalRequest!.ensureSuccess(response);
+        }
+
         const path = this.buildPath(`/sites/${encodeURIComponent(resolvedSiteId)}/events`);
         const response = await this.request.get<OmadaApiResponse<PaginatedResult<unknown>>>(path, {
             page,
@@ -233,10 +244,23 @@ export class NetworkOperations {
     }
 
     /**
-     * Get switch ports for a specific switch (v1 API, paginated).
+     * Get switch ports for a specific switch.
+     *
+     * Uses the internal web UI API when web credentials are configured. The Open API
+     * switch port endpoints are absent on several controllers (OC200 firmware 6.2.x
+     * returns -1600 "Unsupported request path"), so the internal API is preferred
+     * whenever it is available.
      */
-    public async getSwitchPorts(switchMac: string, siteId?: string): Promise<unknown[]> {
+    public async getSwitchPorts(switchMac: string, siteId?: string): Promise<unknown> {
         const resolvedSiteId = this.site.resolveSiteId(siteId);
+
+        if (this.hasInternalApi) {
+            logger.info('Using internal API for getSwitchPorts');
+            const path = `/sites/${encodeURIComponent(resolvedSiteId)}/switches/${encodeURIComponent(switchMac)}/ports`;
+            const response = await this.internalRequest!.get<OmadaApiResponse<unknown>>(path);
+            return this.internalRequest!.ensureSuccess(response);
+        }
+
         const path = this.buildPath(`/sites/${encodeURIComponent(resolvedSiteId)}/switches/${encodeURIComponent(switchMac)}/ports`);
         return await this.request.fetchPaginated<unknown>(path);
     }

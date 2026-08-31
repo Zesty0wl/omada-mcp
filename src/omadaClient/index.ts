@@ -31,6 +31,7 @@ import { InternalAuthManager } from './internalAuth.js';
 import { InternalRequestHandler } from './internalRequest.js';
 import { NetworkOperations } from './network.js';
 import { RequestHandler } from './request.js';
+import { ScheduleOperations } from './schedule.js';
 import { SecurityOperations } from './security.js';
 import { SiteOperations } from './site.js';
 import { SwitchOperations } from './switch.js';
@@ -64,6 +65,8 @@ export class OmadaClient {
 
     private readonly switchOps: SwitchOperations;
 
+    private readonly scheduleOps: ScheduleOperations;
+
     private readonly omadacId: string;
 
     constructor(options: OmadaClientOptions) {
@@ -95,13 +98,15 @@ export class OmadaClient {
         this.actionOps = new ActionOperations(this.request, this.siteOps, this.buildOmadaPath.bind(this));
         this.genericOps = new GenericOperations(this.request, this.buildOmadaPath.bind(this));
         this.switchOps = new SwitchOperations(this.request, this.siteOps, this.buildOmadaPath.bind(this));
+        this.scheduleOps = new ScheduleOperations(this.siteOps);
 
         // Initialize internal API support if web credentials are configured
         if (options.webUsername && options.webPassword) {
             const internalAuth = new InternalAuthManager(this.http, options.webUsername, options.webPassword, options.omadacId);
             const internalReq = new InternalRequestHandler(this.http, internalAuth, options.omadacId);
             this.networkOps.setInternalRequest(internalReq);
-            logger.info('Internal web UI API enabled for ACL management');
+            this.scheduleOps.setInternalRequest(internalReq);
+            logger.info('Internal web UI API enabled (firewall ACLs, schedules, site settings, switch ports, events)');
         }
     }
 
@@ -265,7 +270,7 @@ export class OmadaClient {
     }
 
     // Network read/write operations (switch ports, firewall ACLs, routes)
-    public async getSwitchPorts(switchMac: string, siteId?: string): Promise<unknown[]> {
+    public async getSwitchPorts(switchMac: string, siteId?: string): Promise<unknown> {
         return await this.networkOps.getSwitchPorts(switchMac, siteId);
     }
 
@@ -371,6 +376,56 @@ export class OmadaClient {
      * @param relativePath - The relative path to append to the base API path
      * @param version - The API version to use (default: 'v1')
      */
+    // Schedule operations (internal web UI API)
+    public async listRebootSchedules(siteId?: string): Promise<unknown> {
+        return await this.scheduleOps.listRebootSchedules(siteId);
+    }
+
+    public async createRebootSchedule(data: Record<string, unknown>, siteId?: string): Promise<unknown> {
+        return await this.scheduleOps.createRebootSchedule(data, siteId);
+    }
+
+    public async updateRebootSchedule(scheduleId: string, data: Record<string, unknown>, siteId?: string): Promise<unknown> {
+        return await this.scheduleOps.updateRebootSchedule(scheduleId, data, siteId);
+    }
+
+    public async deleteRebootSchedule(scheduleId: string, siteId?: string): Promise<unknown> {
+        return await this.scheduleOps.deleteRebootSchedule(scheduleId, siteId);
+    }
+
+    public async listPoeSchedules(siteId?: string): Promise<unknown> {
+        return await this.scheduleOps.listPoeSchedules(siteId);
+    }
+
+    public async createPoeSchedule(data: Record<string, unknown>, siteId?: string): Promise<unknown> {
+        return await this.scheduleOps.createPoeSchedule(data, siteId);
+    }
+
+    public async updatePoeSchedule(scheduleId: string, data: Record<string, unknown>, siteId?: string): Promise<unknown> {
+        return await this.scheduleOps.updatePoeSchedule(scheduleId, data, siteId);
+    }
+
+    public async deletePoeSchedule(scheduleId: string, siteId?: string): Promise<unknown> {
+        return await this.scheduleOps.deletePoeSchedule(scheduleId, siteId);
+    }
+
+    public async listTimeRanges(siteId?: string): Promise<unknown> {
+        return await this.scheduleOps.listTimeRanges(siteId);
+    }
+
+    // Site settings (internal web UI API)
+    public async getSiteSettings(siteId?: string): Promise<Record<string, unknown>> {
+        return await this.scheduleOps.getSiteSettings(siteId);
+    }
+
+    public async updateSiteSettings(data: Record<string, unknown>, siteId?: string): Promise<unknown> {
+        return await this.scheduleOps.updateSiteSettings(data, siteId);
+    }
+
+    public async setSiteTimeZone(timeZone: string, siteId?: string): Promise<unknown> {
+        return await this.scheduleOps.setSiteTimeZone(timeZone, siteId);
+    }
+
     private buildOmadaPath(relativePath: string, version = 'v1'): string {
         const normalized = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
         return `/openapi/${version}/${encodeURIComponent(this.omadacId)}${normalized}`;

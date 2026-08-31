@@ -32,6 +32,20 @@ export class InternalRequestHandler {
     }
 
     /**
+     * Make a PUT request to the internal API.
+     */
+    public async put<T>(path: string, data: unknown, params?: Record<string, unknown>): Promise<T> {
+        return await this.request<T>({ method: 'PUT', url: this.buildInternalPath(path), data, params });
+    }
+
+    /**
+     * Make a PATCH request to the internal API.
+     */
+    public async patch<T>(path: string, data: unknown, params?: Record<string, unknown>): Promise<T> {
+        return await this.request<T>({ method: 'PATCH', url: this.buildInternalPath(path), data, params });
+    }
+
+    /**
      * Make a DELETE request to the internal API.
      */
     public async delete<T>(path: string, params?: Record<string, unknown>): Promise<T> {

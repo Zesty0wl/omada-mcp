@@ -1,7 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 import type { OmadaClient } from '../omadaClient/index.js';
-
 import { registerAdoptDeviceTool } from './adoptDevice.js';
 import { registerBatchSetSwitchPortNameTool } from './batchSetSwitchPortName.js';
 import { registerBatchSetSwitchPortPoeTool } from './batchSetSwitchPortPoe.js';
@@ -11,8 +10,12 @@ import { registerBlockClientTool } from './blockClient.js';
 import { registerCreateFirewallAclTool } from './createFirewallAcl.js';
 import { registerCreateLanNetworkTool } from './createLanNetwork.js';
 import { registerCreateLanProfileTool } from './createLanProfile.js';
+import { registerCreatePoeScheduleTool } from './createPoeSchedule.js';
+import { registerCreateRebootScheduleTool } from './createRebootSchedule.js';
 import { registerDeleteFirewallAclTool } from './deleteFirewallAcl.js';
 import { registerDeleteLanNetworkTool } from './deleteLanNetwork.js';
+import { registerDeletePoeScheduleTool } from './deletePoeSchedule.js';
+import { registerDeleteRebootScheduleTool } from './deleteRebootSchedule.js';
 import { registerGenericApiCallTool } from './genericApiCall.js';
 import { registerGetCableTestResultsTool } from './getCableTestResults.js';
 import { registerGetClientTool } from './getClient.js';
@@ -23,6 +26,7 @@ import { registerGetInternetInfoTool } from './getInternetInfo.js';
 import { registerGetLanNetworkListTool } from './getLanNetworkList.js';
 import { registerGetLanProfileListTool } from './getLanProfileList.js';
 import { registerGetPortForwardingStatusTool } from './getPortForwardingStatus.js';
+import { registerGetSiteSettingsTool } from './getSiteSettings.js';
 import { registerGetSsidDetailTool } from './getSsidDetail.js';
 import { registerGetSsidListTool } from './getSsidList.js';
 import { registerGetSwitchTool } from './getSwitch.js';
@@ -41,13 +45,17 @@ import { registerListFirewallAclsTool } from './listFirewallAcls.js';
 import { registerListIpGroupsTool } from './listIpGroups.js';
 import { registerListLogsTool } from './listLogs.js';
 import { registerListMostActiveClientsTool } from './listMostActiveClients.js';
+import { registerListPoeSchedulesTool } from './listPoeSchedules.js';
+import { registerListRebootSchedulesTool } from './listRebootSchedules.js';
 import { registerListRoutesTool } from './listRoutes.js';
 import { registerListSitesTool } from './listSites.js';
+import { registerListTimeRangesTool } from './listTimeRanges.js';
 import { registerRebootDeviceTool } from './rebootDevice.js';
 import { registerReconnectClientTool } from './reconnectClient.js';
 import { registerSearchDevicesTool } from './searchDevices.js';
 import { registerSetDeviceLedTool } from './setDeviceLed.js';
 import { registerSetGatewayWanConnectTool } from './setGatewayWanConnect.js';
+import { registerSetSiteTimeZoneTool } from './setSiteTimeZone.js';
 import { registerSetSwitchNetworksTool } from './setSwitchNetworks.js';
 import { registerSetSwitchPortNameTool } from './setSwitchPortName.js';
 import { registerSetSwitchPortPoeTool } from './setSwitchPortPoe.js';
@@ -61,6 +69,9 @@ import { registerUpdateClientTool } from './updateClient.js';
 import { registerUpdateFirewallSettingTool } from './updateFirewallSetting.js';
 import { registerUpdateLanNetworkTool } from './updateLanNetwork.js';
 import { registerUpdateLanProfileTool } from './updateLanProfile.js';
+import { registerUpdatePoeScheduleTool } from './updatePoeSchedule.js';
+import { registerUpdateRebootScheduleTool } from './updateRebootSchedule.js';
+import { registerUpdateSiteSettingsTool } from './updateSiteSettings.js';
 import { registerUpdateSwitchPortTool } from './updateSwitchPort.js';
 
 export function registerAllTools(server: McpServer, client: OmadaClient): void {
@@ -130,6 +141,22 @@ export function registerAllTools(server: McpServer, client: OmadaClient): void {
     registerSetDeviceLedTool(server, client);
     registerStartFirmwareUpgradeTool(server, client);
     registerSetGatewayWanConnectTool(server, client);
+
+    // Schedule tools (internal web UI API — require OMADA_WEB_USERNAME/OMADA_WEB_PASSWORD)
+    registerListRebootSchedulesTool(server, client);
+    registerCreateRebootScheduleTool(server, client);
+    registerUpdateRebootScheduleTool(server, client);
+    registerDeleteRebootScheduleTool(server, client);
+    registerListPoeSchedulesTool(server, client);
+    registerCreatePoeScheduleTool(server, client);
+    registerUpdatePoeScheduleTool(server, client);
+    registerDeletePoeScheduleTool(server, client);
+    registerListTimeRangesTool(server, client);
+
+    // Site settings tools (internal web UI API)
+    registerGetSiteSettingsTool(server, client);
+    registerUpdateSiteSettingsTool(server, client);
+    registerSetSiteTimeZoneTool(server, client);
 
     // Generic escape hatch
     registerGenericApiCallTool(server, client);
