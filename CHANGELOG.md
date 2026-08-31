@@ -36,6 +36,7 @@ First release of the [Zesty0wl](https://github.com/Zesty0wl/omada-mcp) fork, tak
 - **[`docs/endpoint-discovery.md`](docs/endpoint-discovery.md)** — the discovery method, the Open API vs internal API distinction, and the error codes that distinguish a missing endpoint (`-1600`) from a wrong argument (`-1001`).
 - **[`docs/endpoints/controller-api3-6.2.14.12.txt`](docs/endpoints/controller-api3-6.2.14.12.txt)** — 224 internal endpoints scraped from 225 UI modules.
 - `PUT` and `PATCH` methods on `InternalRequestHandler`.
+- `tests/omadaClient/schedule.test.ts` — 18 tests covering path construction, id encoding, the missing-credentials error, controller error propagation, and `setSiteTimeZone`'s region/scenario handling. Raises `schedule.ts` coverage from 2% to 88% and the project total from 65% to 69%.
 
 ### Changed
 
