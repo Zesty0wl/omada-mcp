@@ -3,32 +3,28 @@ import { z } from 'zod';
 
 import type { OmadaClient } from '../omadaClient/index.js';
 import { toToolResult, wrapToolHandler } from '../server/common.js';
+import { buildLanProfileBody, type LanProfileInput, lanProfileFields } from './lanProfileSchema.js';
 
 const updateLanProfileSchema = z.object({
     siteId: z.string().min(1).optional(),
     profileId: z.string().min(1, 'profileId is required'),
-    name: z.string().min(1, 'Profile name is required'),
-    nativeNetworkId: z.string().min(1).describe('Native (untagged) network ID'),
-    tagNetworkIds: z.array(z.string().min(1)).describe('Tagged network IDs'),
-    poe: z.boolean().describe('Whether PoE is enabled'),
-    spanningTreeEnable: z.boolean().describe('Whether Spanning Tree Protocol is enabled'),
-    loopbackDetectEnable: z.boolean().describe('Whether loopback detection is enabled'),
-    portIsolationEnable: z.boolean().describe('Whether port isolation is enabled'),
-    lldpMedEnable: z.boolean().describe('Whether LLDP-MED is enabled'),
+    ...lanProfileFields,
 });
 
 export function registerUpdateLanProfileTool(server: McpServer, client: OmadaClient): void {
     server.registerTool(
         'updateLanProfile',
         {
-            description: 'Update an existing LAN profile configuration including network assignments and port settings.',
+            description:
+                'Update a switch port LAN profile. The controller validates the whole profile, so start from the profile as returned by ' +
+                'getLanProfileList and change what you need.',
             inputSchema: updateLanProfileSchema.shape,
             annotations: {
                 destructiveHint: true,
             },
         },
         wrapToolHandler('updateLanProfile', async ({ siteId, profileId, ...data }) =>
-            toToolResult(await client.updateLanProfile(profileId, data, siteId))
+            toToolResult(await client.updateLanProfile(profileId, buildLanProfileBody(data as LanProfileInput), siteId))
         )
     );
 }

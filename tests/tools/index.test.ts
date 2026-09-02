@@ -67,6 +67,7 @@ describe('tools/index', () => {
                 'listLogs',
                 'listMostActiveClients',
                 'listPoeSchedules',
+                'listPortForwardings',
                 'listRebootSchedules',
                 'listRoutes',
                 'listSites',

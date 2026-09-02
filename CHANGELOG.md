@@ -12,9 +12,45 @@ So every release below records the controller firmware it was **developed and ve
 
 | Firmware | Controller | Open API | Endpoint dump | Releases verified |
 |---|---|---|---|---|
-| 6.2.14.12 | OC200 hardware controller | v3 | [`controller-api3-6.2.14.12.txt`](docs/endpoints/controller-api3-6.2.14.12.txt) | 0.6.0 |
+| 6.2.14.12 | OC200 hardware controller | v3 | [`controller-api3-6.2.14.12.txt`](docs/endpoints/controller-api3-6.2.14.12.txt) | 0.6.0, 0.7.0 |
 | not recorded | OC200 (per commit message) | — | — | 0.5.5+realtydev |
 | not recorded | — | — | — | ≤ 0.5.5 |
+
+---
+
+## [0.7.0] — 2026-09-02
+
+**Verified against:** the 0.6.0 hardware — OC200 hardware controller, firmware **6.2.14.12** (Open API v3), ER7206 v1.0 gateway, T1600G-28PS v3.0 and SG2008P v3.20 switches, EAP610 access points.
+
+Driven by a live failure: `updateLanNetwork` could not change the DNS servers a network hands out. Checking every endpoint this server calls against the controller's own OpenAPI document (`docs/openapi/`) and probing the controller with bogus IDs showed the same two mistakes repeated across a dozen tools, so this release fixes the class rather than the instance.
+
+### Fixed
+
+- **Wrong HTTP method.** The controller routes `PATCH`, not `PUT`, for `updateLanNetwork` (v2), `updateLanProfile` and `updateFirewallSetting`, and `DELETE` for a LAN network exists only on the v1 path. All four answered `-1600 Unsupported request path` — the same code as a missing endpoint, which is how they had been written off as unsupported.
+- **Wrong path.** `adoptDevice` (`/cmd/adopts` → `/devices/{mac}/start-adopt`), `getFirmwareDetails` (`/devices/{mac}/firmware` → `/devices/{mac}/latest-firmware-info`), `startFirmwareUpgrade` (`…/firmware/upgrade` → `…/start-online-upgrade`), `listRoutes` (`/setting/routes` → `/routing/static-routings`), `listLogs` (`/sites/{id}/logs` → `/sites/{id}/logs/events`, which also needs a time window — the last 7 days by default), `setDeviceLed` (`/devices/{mac}/led-setting` → the family's `/aps|switches|gateways/{mac}/general-config`, family looked up automatically), and the Open API fallbacks of `listEvents` (`/logs/events`), `getSwitchPorts` (`portList` from the switch detail) and the firewall ACL tools (`/acls/osg-acls`, `/acls/{id}`).
+- **`updateClient`** called `PATCH /clients/{mac}`, which does not exist. It now writes each group through its own endpoint: name → `/clients/{mac}/name`, fixed IP → `/clients/config`, rate limit → `/clients/{mac}/ratelimit`.
+  *Firmware 6.2.14.12:* the rate-limit route rejects a body without `mode` ("Parameter [mode] could not be null") although the OpenAPI document omits the field. The tool sends `mode: 0` unless `rateLimitMode` is given; the accepted values could not be confirmed.
+- **`updateSwitchPort`** called an undocumented `PATCH /switches/{mac}/ports/{port}` that answers `-1 General error` even for a no-op body. It now fans out to the documented per-attribute endpoints (profile, profile override, PoE, status, name) and refuses the profile-only fields (STP, isolation, loopback detection, LLDP-MED, speed/duplex) with a pointer to `updateLanProfile`.
+- **`setGatewayWanConnect`** had no route on either API. It now sends what the controller's own WAN page sends, over the internal API: `POST /cmd/gateways/{mac}/internetState` with `{ portId, operation }` (1 = connect, 0 = disconnect). Requires web credentials. Verified to reach the controller's parameter validation; not exercised against a live WAN.
+
+### Added
+
+- **`listPortForwardings`** — the configured NAT port forwarding rules (`GET /sites/{siteId}/nat/port-forwardings`): name, status, WAN port, external and internal port, target IP, protocol, source restriction. Verified on 6.2.14.12.
+
+### Changed
+
+- **`createLanNetwork` / `updateLanNetwork`** input now mirrors the controller's `dhcpSettingsVO`: DHCP pools (`ipRangePool`, or the `ipRangeStart`/`ipRangeEnd` shorthand), `dhcpns` auto/manual, `priDns`/`sndDns`, custom options, plus `interfaceIds`, `vlanType`, `application`, `domain` and `mldSnoopEnable`. Lease time is in **minutes** — the old description said seconds. The DHCP block used to be sent as `dhcpSettings` with `leaseTime`, names the controller does not read.
+- **`createLanProfile` / `updateLanProfile`** now carry every field the controller requires (`dot1x`, `bandWidthCtrlType`, `untagNetworkIds`, `voiceNetworkId`, `bandCtrl`, `stormCtrl`, …). `poe` is the controller's 0 = on / 1 = off / 2 = do not modify; a boolean is still accepted and mapped.
+- **`listLogs` / `listEvents`** accept `timeStart`, `timeEnd` (epoch ms) and `module` (System / Device / Client).
+- **`adoptDevice`** accepts optional `username` / `password` for a device with non-default credentials. **`setDeviceLed`** accepts an optional `deviceType` to skip the device lookup.
+- `RequestHandler` gained `patch()`.
+
+### Documented
+
+- **`-1600` also means wrong HTTP method.** `PUT` on a `PATCH`-only route returns exactly the same `-1600 Unsupported request path` as a nonexistent path. Check the method against `docs/openapi/` before concluding an endpoint is absent. Recorded in [docs/endpoint-discovery.md](docs/endpoint-discovery.md).
+- The switch port write tools (`setSwitchPort*`, `batchSetSwitchPort*`) **work** on 6.2.14.12 — verified with a no-op rename of a real port. 0.6.0 listed them as broken; that entry was wrong.
+- `createLanNetwork` → `getLanNetworkList` → `deleteLanNetwork` verified as a full round trip on 6.2.14.12 (interface network with a DHCP pool and manual DNS). The controller creates a matching LAN profile alongside the network and removes it with the network.
+- `getCableTestResults` and `getSwitchStackDetail` route on 6.2.14.12 after all (0.6.0 listed them as absent): the cable-test endpoint returns an empty result set until a test has run, and the stack endpoint answers "This switch stack is not existed" for an unknown ID rather than `-1600`. `getPortForwardingStatus` (the insight endpoint) still answers `-1001 Invalid request parameters` for both `User` and `UPnP`; `startCableTest` was not exercised.
 
 ---
 

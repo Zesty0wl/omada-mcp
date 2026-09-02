@@ -7,6 +7,7 @@ import type {
     ActiveClientInfo,
     ClientActivity,
     ClientPastConnection,
+    EventLogOptions,
     GetClientActivityOptions,
     GetDeviceStatsOptions,
     GetThreatListOptions,
@@ -18,11 +19,12 @@ import type {
     OswStackDetail,
     PaginatedResult,
     ThreatInfo,
+    UpdateClientInput,
 } from '../types/index.js';
 
 import { logger } from '../utils/logger.js';
 
-import { ActionOperations } from './action.js';
+import { ActionOperations, type AdoptCredentials, type DeviceKind } from './action.js';
 import { AuthManager } from './auth.js';
 import { ClientOperations } from './client.js';
 import { DeviceOperations } from './device.js';
@@ -34,7 +36,7 @@ import { RequestHandler } from './request.js';
 import { ScheduleOperations } from './schedule.js';
 import { SecurityOperations } from './security.js';
 import { SiteOperations } from './site.js';
-import { SwitchOperations } from './switch.js';
+import { SwitchOperations, type UpdateSwitchPortInput } from './switch.js';
 
 export type OmadaClientOptions = EnvironmentConfig;
 
@@ -95,7 +97,9 @@ export class OmadaClient {
         this.clientOps = new ClientOperations(this.request, this.siteOps, this.buildOmadaPath.bind(this));
         this.securityOps = new SecurityOperations(this.request, this.buildOmadaPath.bind(this));
         this.networkOps = new NetworkOperations(this.request, this.siteOps, this.buildOmadaPath.bind(this));
-        this.actionOps = new ActionOperations(this.request, this.siteOps, this.buildOmadaPath.bind(this));
+        this.actionOps = new ActionOperations(this.request, this.siteOps, this.buildOmadaPath.bind(this), (identifier, siteId) =>
+            this.deviceOps.getDevice(identifier, siteId)
+        );
         this.genericOps = new GenericOperations(this.request, this.buildOmadaPath.bind(this));
         this.switchOps = new SwitchOperations(this.request, this.siteOps, this.buildOmadaPath.bind(this));
         this.scheduleOps = new ScheduleOperations(this.siteOps);
@@ -106,7 +110,8 @@ export class OmadaClient {
             const internalReq = new InternalRequestHandler(this.http, internalAuth, options.omadacId);
             this.networkOps.setInternalRequest(internalReq);
             this.scheduleOps.setInternalRequest(internalReq);
-            logger.info('Internal web UI API enabled (firewall ACLs, schedules, site settings, switch ports, events)');
+            this.actionOps.setInternalRequest(internalReq);
+            logger.info('Internal web UI API enabled (firewall ACLs, schedules, site settings, switch ports, events, WAN connect)');
         }
     }
 
@@ -220,12 +225,12 @@ export class OmadaClient {
         return await this.networkOps.updateFirewallSetting(data, siteId);
     }
 
-    public async listEvents(siteId?: string, page?: number, pageSize?: number): Promise<PaginatedResult<unknown>> {
-        return await this.networkOps.listEvents(siteId, page, pageSize);
+    public async listEvents(siteId?: string, page?: number, pageSize?: number, options?: EventLogOptions): Promise<PaginatedResult<unknown>> {
+        return await this.networkOps.listEvents(siteId, page, pageSize, options);
     }
 
-    public async listLogs(siteId?: string, page?: number, pageSize?: number): Promise<PaginatedResult<unknown>> {
-        return await this.networkOps.listLogs(siteId, page, pageSize);
+    public async listLogs(siteId?: string, page?: number, pageSize?: number, options?: EventLogOptions): Promise<PaginatedResult<unknown>> {
+        return await this.networkOps.listLogs(siteId, page, pageSize, options);
     }
 
     // Device and client actions
@@ -233,8 +238,8 @@ export class OmadaClient {
         return await this.actionOps.rebootDevice(deviceMac, siteId);
     }
 
-    public async adoptDevice(deviceMac: string, siteId?: string): Promise<unknown> {
-        return await this.actionOps.adoptDevice(deviceMac, siteId);
+    public async adoptDevice(deviceMac: string, siteId?: string, credentials?: AdoptCredentials): Promise<unknown> {
+        return await this.actionOps.adoptDevice(deviceMac, siteId, credentials);
     }
 
     public async blockClient(clientMac: string, siteId?: string): Promise<unknown> {
@@ -249,12 +254,12 @@ export class OmadaClient {
         return await this.actionOps.reconnectClient(clientMac, siteId);
     }
 
-    public async updateClient(clientMac: string, data: Record<string, unknown>, siteId?: string): Promise<unknown> {
+    public async updateClient(clientMac: string, data: UpdateClientInput, siteId?: string): Promise<Record<string, unknown>> {
         return await this.actionOps.updateClient(clientMac, data, siteId);
     }
 
-    public async setDeviceLed(deviceMac: string, ledSetting: number, siteId?: string): Promise<unknown> {
-        return await this.actionOps.setDeviceLed(deviceMac, ledSetting, siteId);
+    public async setDeviceLed(deviceMac: string, ledSetting: number, siteId?: string, deviceType?: DeviceKind): Promise<unknown> {
+        return await this.actionOps.setDeviceLed(deviceMac, ledSetting, siteId, deviceType);
     }
 
     public async getFirmwareDetails(deviceMac: string, siteId?: string): Promise<unknown> {
@@ -274,8 +279,8 @@ export class OmadaClient {
         return await this.networkOps.getSwitchPorts(switchMac, siteId);
     }
 
-    public async updateSwitchPort(switchMac: string, portId: string, data: Record<string, unknown>, siteId?: string): Promise<unknown> {
-        return await this.networkOps.updateSwitchPort(switchMac, portId, data, siteId);
+    public async updateSwitchPort(switchMac: string, port: number, data: UpdateSwitchPortInput, siteId?: string): Promise<Record<string, unknown>> {
+        return await this.switchOps.updateSwitchPort(switchMac, port, data, siteId);
     }
 
     public async listFirewallAcls(siteId?: string): Promise<unknown> {
@@ -296,6 +301,10 @@ export class OmadaClient {
 
     public async listRoutes(siteId?: string): Promise<unknown[]> {
         return await this.networkOps.listRoutes(siteId);
+    }
+
+    public async listPortForwardings(siteId?: string): Promise<unknown[]> {
+        return await this.networkOps.listPortForwardings(siteId);
     }
 
     // Switch operations

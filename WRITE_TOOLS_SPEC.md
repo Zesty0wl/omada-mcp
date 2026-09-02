@@ -12,18 +12,18 @@ Add write/action tools to this existing MCP server. Follow the existing code pat
 
 ### Network Management (write)
 1. **createLanNetwork** — POST `/sites/{siteId}/lan-networks` (v2)
-   - Params: name, vlan (number), gatewaySubnet (e.g. "192.168.10.1/24"), purpose (1=interface), igmpSnoopEnable (bool), dhcpSettings (enable, ipRangeStart, ipRangeEnd, leaseTime)
-   - All fields required by controller validation
+   - Params: name, purpose (0=VLAN, 1=interface), vlan, interfaceIds, gatewaySubnet, igmpSnoopEnable, mldSnoopEnable, domain, dhcpSettings
+   - dhcpSettings is sent as the controller's `dhcpSettingsVO`: enable, ipRangePool (or ipRangeStart/ipRangeEnd shorthand), dhcpns auto|manual, priDns, sndDns, leasetime (**minutes**, 2-10080), gateway, options. See `src/tools/lanNetworkSchema.ts`.
 
-2. **updateLanNetwork** — PUT `/sites/{siteId}/lan-networks/{networkId}` (v2)
+2. **updateLanNetwork** — **PATCH** `/sites/{siteId}/lan-networks/{networkId}` (v2). PUT returns -1600.
    - Same fields as create + networkId
 
-3. **deleteLanNetwork** — DELETE `/sites/{siteId}/lan-networks/{networkId}` (v2)
+3. **deleteLanNetwork** — DELETE `/sites/{siteId}/lan-networks/{networkId}` (**v1**; the v2 path has no DELETE)
 
 4. **createLanProfile** — POST `/sites/{siteId}/lan-profiles` (v1)
    - Params: name, nativeNetworkId, tagNetworkIds[], poe, spanningTreeEnable, loopbackDetectEnable, portIsolationEnable, lldpMedEnable
 
-5. **updateLanProfile** — PUT `/sites/{siteId}/lan-profiles/{profileId}` (v1)
+5. **updateLanProfile** — **PATCH** `/sites/{siteId}/lan-profiles/{profileId}` (v1). PUT returns -1600. Body mirrors createLanProfile: poe is 0/1/2, dot1x and bandWidthCtrlType are required. See `src/tools/lanProfileSchema.ts`.
 
 ### Device Actions
 6. **rebootDevice** — POST `/sites/{siteId}/devices/{deviceMac}/reboot` (v1) (ref: wonjo-linc/MCP-Omada)

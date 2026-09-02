@@ -14,6 +14,9 @@ describe('NetworkOperations', () => {
     beforeEach(() => {
         mockRequest = {
             get: vi.fn(),
+            post: vi.fn(),
+            patch: vi.fn(),
+            delete: vi.fn(),
             fetchPaginated: vi.fn(),
             ensureSuccess: vi.fn((response: OmadaApiResponse<unknown>) => {
                 if (response.errorCode === 0) {
@@ -235,6 +238,148 @@ describe('NetworkOperations', () => {
 
             expect(mockRequest.get).toHaveBeenCalledWith('/openapi/v1/test-omadac/sites/site-123/firewall');
             expect(result).toEqual(mockData);
+        });
+    });
+
+    describe('LAN network writes', () => {
+        const ok: OmadaApiResponse<unknown> = { errorCode: 0, result: undefined };
+
+        it('creates a LAN network with POST on the v2 path', async () => {
+            vi.mocked(mockRequest.post).mockResolvedValue(ok);
+
+            await networkOps.createLanNetwork({ name: 'IoT' }, 'site-123');
+
+            expect(mockRequest.post).toHaveBeenCalledWith('/openapi/v2/test-omadac/sites/site-123/lan-networks', { name: 'IoT' });
+        });
+
+        it('updates a LAN network with PATCH on the v2 path', async () => {
+            vi.mocked(mockRequest.patch).mockResolvedValue(ok);
+
+            await networkOps.updateLanNetwork('net-1', { name: 'Default' }, 'site-123');
+
+            expect(mockRequest.patch).toHaveBeenCalledWith('/openapi/v2/test-omadac/sites/site-123/lan-networks/net-1', { name: 'Default' });
+        });
+
+        it('deletes a LAN network on the v1 path', async () => {
+            vi.mocked(mockRequest.delete).mockResolvedValue(ok);
+
+            await networkOps.deleteLanNetwork('net-1', 'site-123');
+
+            expect(mockRequest.delete).toHaveBeenCalledWith('/openapi/v1/test-omadac/sites/site-123/lan-networks/net-1');
+        });
+    });
+
+    describe('updateLanProfile', () => {
+        it('uses PATCH', async () => {
+            vi.mocked(mockRequest.patch).mockResolvedValue({ errorCode: 0, result: undefined });
+
+            await networkOps.updateLanProfile('prof-1', { name: 'Cameras' }, 'site-123');
+
+            expect(mockRequest.patch).toHaveBeenCalledWith('/openapi/v1/test-omadac/sites/site-123/lan-profiles/prof-1', { name: 'Cameras' });
+        });
+    });
+
+    describe('updateFirewallSetting', () => {
+        it('uses PATCH', async () => {
+            vi.mocked(mockRequest.patch).mockResolvedValue({ errorCode: 0, result: undefined });
+
+            await networkOps.updateFirewallSetting({ synCookies: true }, 'site-123');
+
+            expect(mockRequest.patch).toHaveBeenCalledWith('/openapi/v1/test-omadac/sites/site-123/firewall', { synCookies: true });
+        });
+    });
+
+    describe('listLogs', () => {
+        const page: PaginatedResult<unknown> = { totalRows: 0, currentPage: 1, currentSize: 10, data: [] };
+
+        it('reads the Open API event log with a default seven-day window', async () => {
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2026-09-02T12:00:00Z'));
+            vi.mocked(mockRequest.get).mockResolvedValue({ errorCode: 0, result: page });
+
+            try {
+                await networkOps.listLogs('site-123', 2, 50);
+            } finally {
+                vi.useRealTimers();
+            }
+
+            const now = new Date('2026-09-02T12:00:00Z').getTime();
+            expect(mockRequest.get).toHaveBeenCalledWith('/openapi/v1/test-omadac/sites/site-123/logs/events', {
+                page: 2,
+                pageSize: 50,
+                'filters.timeStart': now - 7 * 24 * 60 * 60 * 1000,
+                'filters.timeEnd': now,
+            });
+        });
+
+        it('passes an explicit window and module', async () => {
+            vi.mocked(mockRequest.get).mockResolvedValue({ errorCode: 0, result: page });
+
+            await networkOps.listLogs('site-123', 1, 10, { timeStart: 1000, timeEnd: 2000, module: 'Client' });
+
+            expect(mockRequest.get).toHaveBeenCalledWith('/openapi/v1/test-omadac/sites/site-123/logs/events', {
+                page: 1,
+                pageSize: 10,
+                'filters.timeStart': 1000,
+                'filters.timeEnd': 2000,
+                'filters.module': 'Client',
+            });
+        });
+    });
+
+    describe('listEvents', () => {
+        it('falls back to the Open API event log without web credentials', async () => {
+            vi.mocked(mockRequest.get).mockResolvedValue({ errorCode: 0, result: { totalRows: 0, currentPage: 1, currentSize: 10, data: [] } });
+
+            await networkOps.listEvents('site-123', 1, 10, { timeStart: 5, timeEnd: 6 });
+
+            expect(mockRequest.get).toHaveBeenCalledWith(
+                '/openapi/v1/test-omadac/sites/site-123/logs/events',
+                expect.objectContaining({ 'filters.timeStart': 5, 'filters.timeEnd': 6 })
+            );
+        });
+    });
+
+    describe('listPortForwardings', () => {
+        it('reads the configured NAT port forwarding rules', async () => {
+            vi.mocked(mockRequest.fetchPaginated).mockResolvedValue([{ name: 'Web', externalPort: '443' }]);
+
+            const result = await networkOps.listPortForwardings('site-123');
+
+            expect(mockRequest.fetchPaginated).toHaveBeenCalledWith('/openapi/v1/test-omadac/sites/site-123/nat/port-forwardings');
+            expect(result).toEqual([{ name: 'Web', externalPort: '443' }]);
+        });
+    });
+
+    describe('listRoutes', () => {
+        it('reads the static routing list', async () => {
+            vi.mocked(mockRequest.fetchPaginated).mockResolvedValue([]);
+
+            await networkOps.listRoutes('site-123');
+
+            expect(mockRequest.fetchPaginated).toHaveBeenCalledWith('/openapi/v1/test-omadac/sites/site-123/routing/static-routings');
+        });
+    });
+
+    describe('getSwitchPorts', () => {
+        it('serves portList from the switch detail when the internal API is not configured', async () => {
+            const ports = [{ port: 1, name: 'Port1' }];
+            vi.mocked(mockRequest.get).mockResolvedValue({ errorCode: 0, result: { mac: 'AA', portList: ports } });
+
+            const result = await networkOps.getSwitchPorts('AA', 'site-123');
+
+            expect(mockRequest.get).toHaveBeenCalledWith('/openapi/v1/test-omadac/sites/site-123/switches/AA');
+            expect(result).toEqual(ports);
+        });
+    });
+
+    describe('listFirewallAcls', () => {
+        it('falls back to the Open API gateway ACL list', async () => {
+            vi.mocked(mockRequest.fetchPaginated).mockResolvedValue([]);
+
+            await networkOps.listFirewallAcls('site-123');
+
+            expect(mockRequest.fetchPaginated).toHaveBeenCalledWith('/openapi/v1/test-omadac/sites/site-123/acls/osg-acls');
         });
     });
 });

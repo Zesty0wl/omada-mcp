@@ -14,8 +14,8 @@ export function registerUpdateFirewallSettingTool(server: McpServer, client: Oma
         'updateFirewallSetting',
         {
             description:
-                'Update firewall settings for a site. Pass the same shape returned by getFirewallSetting ' +
-                '(broadcastPing, sendRedirects, synCookies, etc.).',
+                'Update firewall settings for a site. Pass the full object returned by getFirewallSetting with your changes ' +
+                '(broadcastPing, sendRedirects, synCookies, the TCP/UDP timeouts, etc.) — the controller validates every field.',
             inputSchema: updateFirewallSettingSchema.shape,
             annotations: {
                 destructiveHint: true,

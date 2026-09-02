@@ -38,6 +38,13 @@ export class RequestHandler {
     }
 
     /**
+     * Make a PATCH request to the Omada API.
+     */
+    public async patch<T>(path: string, data: unknown, params?: Record<string, unknown>): Promise<T> {
+        return await this.request<T>({ method: 'PATCH', url: path, data, params });
+    }
+
+    /**
      * Make a DELETE request to the Omada API.
      */
     public async delete<T>(path: string, params?: Record<string, unknown>): Promise<T> {

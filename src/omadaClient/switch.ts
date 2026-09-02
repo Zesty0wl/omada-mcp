@@ -3,6 +3,20 @@ import type { OmadaApiResponse } from '../types/index.js';
 import type { RequestHandler } from './request.js';
 import type { SiteOperations } from './site.js';
 
+/** Settings updateSwitchPort can apply, each through a documented per-attribute Open API endpoint. */
+export interface UpdateSwitchPortInput {
+    /** LAN profile ID to assign. */
+    profileId?: string;
+    /** Enable or disable profile override on the port. */
+    profileOverrideEnable?: boolean;
+    /** PoE on (true) or off (false). */
+    poe?: boolean;
+    /** Port enabled (true) or shut down (false). */
+    status?: boolean;
+    /** Port name, 1-128 characters. */
+    name?: string;
+}
+
 /**
  * Switch port and cable test operations for the Omada API.
  * Covers single-port config, batch operations, cable tests, and switch networks.
@@ -77,6 +91,44 @@ export class SwitchOperations {
         );
         const response = await this.request.put<OmadaApiResponse<unknown>>(path, { profileOverrideEnable });
         return this.request.ensureSuccess(response);
+    }
+
+    /**
+     * Apply several settings to one switch port through the documented per-attribute endpoints.
+     *
+     * The bare `PATCH /switches/{mac}/ports/{port}` route this used to call is undocumented and answers
+     * -1 "General error" on firmware 6.2.14.12 even for a no-op body, so each field is written through
+     * its own PUT endpoint. Fields are applied in the order profile, profile override, PoE, status, name;
+     * the first failure aborts the rest. Returns the fields that were applied.
+     */
+    public async updateSwitchPort(switchMac: string, port: number, input: UpdateSwitchPortInput, siteId?: string): Promise<Record<string, unknown>> {
+        const applied: Record<string, unknown> = {};
+
+        if (input.profileId !== undefined) {
+            await this.setSwitchPortProfile(switchMac, port, input.profileId, siteId);
+            applied.profileId = input.profileId;
+        }
+        if (input.profileOverrideEnable !== undefined) {
+            await this.setSwitchPortProfileOverride(switchMac, port, input.profileOverrideEnable, siteId);
+            applied.profileOverrideEnable = input.profileOverrideEnable;
+        }
+        if (input.poe !== undefined) {
+            await this.setSwitchPortPoe(switchMac, port, input.poe ? 1 : 0, siteId);
+            applied.poe = input.poe;
+        }
+        if (input.status !== undefined) {
+            await this.setSwitchPortStatus(switchMac, port, input.status ? 1 : 0, siteId);
+            applied.status = input.status;
+        }
+        if (input.name !== undefined) {
+            await this.setSwitchPortName(switchMac, port, input.name, siteId);
+            applied.name = input.name;
+        }
+
+        if (Object.keys(applied).length === 0) {
+            throw new Error('updateSwitchPort: nothing to update. Supply profileId, profileOverrideEnable, poe, status or name.');
+        }
+        return applied;
     }
 
     /**

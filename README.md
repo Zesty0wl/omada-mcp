@@ -70,7 +70,7 @@ curl -sk https://<controller>/api/info
 | `OMADA_CLIENT_SECRET` | Yes | - | Open API client secret |
 | `OMADA_OMADAC_ID` | Yes | - | Controller ID |
 | `OMADA_SITE_ID` | No | - | Default site ID |
-| `OMADA_WEB_USERNAME` | No | - | **Controller web UI login.** Enables the internal API — required for schedules, site settings, firewall ACLs, IP groups, switch ports and events |
+| `OMADA_WEB_USERNAME` | No | - | **Controller web UI login.** Enables the internal API — required for schedules, site settings, firewall ACLs, IP groups, switch ports, events and WAN connect/disconnect |
 | `OMADA_WEB_PASSWORD` | No | - | Controller web UI password |
 | `OMADA_STRICT_SSL` | No | `true` | Set `false` for self-signed certificates |
 | `OMADA_TIMEOUT` | No | `30000` | Request timeout (ms) |
@@ -83,11 +83,13 @@ Omada controllers expose two APIs: the documented **Open API** (`/openapi/v1/...
 
 Verified against **OC200 hardware controller, firmware 6.2.14.12** (ER7206 gateway, T1600G-28PS and SG2008P switches, EAP610 access points):
 
-**Work over the Open API alone** — `listSites` `listDevices` `getDevice` `getSwitch` `listClients` `getClient` `listDevicesStats` `listMostActiveClients` `listClientsActivity` `listClientsPastConnections` `getInternetInfo` `getLanNetworkList` `getLanProfileList` `getWlanGroupList` `getSsidList` `getSsidDetail` `getFirewallSetting` `searchDevices` `rebootDevice` `blockClient` `unblockClient` `reconnectClient` `setDeviceLed` `adoptDevice` and the LAN network/profile write tools.
+**Work over the Open API alone** — `listSites` `listDevices` `getDevice` `getSwitch` `listClients` `getClient` `listDevicesStats` `listMostActiveClients` `listClientsActivity` `listClientsPastConnections` `getInternetInfo` `getLanNetworkList` `getLanProfileList` `getWlanGroupList` `getSsidList` `getSsidDetail` `getFirewallSetting` `updateFirewallSetting` `searchDevices` `rebootDevice` `adoptDevice` `blockClient` `unblockClient` `reconnectClient` `updateClient` `setDeviceLed` `getFirmwareDetails` `startFirmwareUpgrade` `listRoutes` `listLogs` `listPortForwardings` `getCableTestResults` `getSwitchStackDetail` `updateSwitchPort` `setSwitchPort*` `batchSetSwitchPort*` and the LAN network/profile write tools. `listEvents` and `getSwitchPorts` work here too, with reduced detail.
 
-**Require `OMADA_WEB_USERNAME` / `OMADA_WEB_PASSWORD`** — all schedule and site settings tools, `listFirewallAcls`, `createFirewallAcl`, `deleteFirewallAcl`, `listIpGroups`, `getSwitchPorts`, `listEvents`.
+**Require `OMADA_WEB_USERNAME` / `OMADA_WEB_PASSWORD`** — all schedule and site settings tools, `listFirewallAcls`, `createFirewallAcl`, `deleteFirewallAcl`, `listIpGroups`, `setGatewayWanConnect`. `getSwitchPorts` and `listEvents` prefer the internal API when it is available.
 
-**Known not to work on this hardware, on either API** — `listRoutes`, `getPortForwardingStatus`, `getFirmwareDetails`, `startFirmwareUpgrade`, `getCableTestResults`, `startCableTest`, `listLogs`, `getSwitchStackDetail`, and all switch port *write* tools (`updateSwitchPort`, `setSwitchPort*`, `batchSetSwitchPort*`). The Open API paths return `-1600`; equivalent internal paths were not located. Switch port configuration must be done in the web UI. Port *state* is still readable via `getSwitch` or `getSwitchPorts`.
+**Not working on this hardware** — `getPortForwardingStatus`: the insight endpoint answers `-1001 Invalid request parameters` for both `User` and `UPnP` even with the documented page parameters; `listPortForwardings` returns the configured rules instead. `startCableTest` has not been exercised, because it disrupts the links it tests. `getCableTestResults` and `getSwitchStackDetail` do route on 6.2.14.12 — 0.6.0 listed them as absent — though this site has no stack to read.
+
+**A note on `-1600`.** Earlier releases listed far more tools here. Most of them were calling the wrong HTTP method or path, not a missing endpoint: the controller answers `-1600 Unsupported request path` for `PUT` on a `PATCH`-only route exactly as it does for a path that does not exist. Every endpoint this server calls has since been checked against the controller's own OpenAPI document in [`docs/openapi/`](docs/openapi/) — see the [CHANGELOG](CHANGELOG.md) for what changed.
 
 Your controller may differ. `genericApiCall` is the escape hatch for anything not covered.
 
@@ -153,16 +155,17 @@ If you run different hardware or firmware, a dump and a compatibility correction
 | `listClientsPastConnections` | Historical client connections |
 | `getThreatList` | Security threat list |
 | `getInternetInfo` | Internet / WAN configuration |
-| `getPortForwardingStatus` | Port forwarding rules (User/UPnP) |
+| `getPortForwardingStatus` | Port forwarding status (User/UPnP) — see compatibility notes |
+| `listPortForwardings` | Configured port forwarding rules: name, status, WAN port, external/internal port, target IP |
 | `getLanNetworkList` | LAN networks and VLAN settings |
 | `getLanProfileList` | LAN profiles for switch ports |
 | `getWlanGroupList` | WLAN groups |
 | `getSsidList` | SSIDs in a WLAN group |
 | `getSsidDetail` | Detailed SSID configuration |
 | `getFirewallSetting` | Firewall settings and policies |
-| `getFirmwareDetails` | Firmware info for a device |
+| `getFirmwareDetails` | Latest firmware info for a device (current version, available update) |
 | `listEvents` | Paginated site events (internal API) |
-| `listLogs` | Paginated site logs |
+| `listLogs` | Site event log over the Open API, filterable by time window and module |
 | `listFirewallAcls` | Firewall ACL rules (internal API) |
 | `listIpGroups` | IP/port groups for ACL rules (internal API) |
 | `listRoutes` | Static routes |
@@ -173,12 +176,12 @@ If you run different hardware or firmware, a dump and a compatibility correction
 
 | Tool | Description |
 |---|---|
-| `createLanNetwork` / `updateLanNetwork` / `deleteLanNetwork` | Manage LAN networks |
-| `createLanProfile` / `updateLanProfile` | Manage LAN profiles |
+| `createLanNetwork` / `updateLanNetwork` / `deleteLanNetwork` | Manage LAN networks, including DHCP pools and the DNS servers handed to clients |
+| `createLanProfile` / `updateLanProfile` | Manage switch port LAN profiles (networks, PoE, 802.1X, STP, bandwidth/storm control) |
 | `updateFirewallSetting` | Update firewall settings |
 | `createFirewallAcl` / `deleteFirewallAcl` | Manage firewall ACL rules (internal API) |
-| `updateSwitchPort` | Update switch port configuration |
-| `updateClient` | Update client settings |
+| `updateSwitchPort` | Set profile, override, PoE, status and name on one port in a single call |
+| `updateClient` | Rename a client, reserve a fixed IP, set per-client rate limits |
 | `setSwitchNetworks` | Set switch VLAN trunking |
 
 ### Switch port tools
@@ -199,7 +202,7 @@ If you run different hardware or firmware, a dump and a compatibility correction
 | `reconnectClient` | Reconnect a client |
 | `setDeviceLed` | Set device LED behaviour |
 | `startFirmwareUpgrade` | Start a firmware upgrade |
-| `setGatewayWanConnect` | Connect or disconnect a gateway WAN port |
+| `setGatewayWanConnect` | Connect or disconnect a gateway WAN port (internal API) |
 
 ### Generic
 

@@ -13,7 +13,7 @@ export function registerDeleteLanNetworkTool(server: McpServer, client: OmadaCli
     server.registerTool(
         'deleteLanNetwork',
         {
-            description: 'Delete a LAN network by its network ID.',
+            description: 'Delete a LAN network by its network ID. Also removes the LAN profile the controller created for it.',
             inputSchema: deleteLanNetworkSchema.shape,
             annotations: {
                 destructiveHint: true,

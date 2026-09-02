@@ -13,7 +13,8 @@ export function registerGetFirmwareDetailsTool(server: McpServer, client: OmadaC
     server.registerTool(
         'getFirmwareDetails',
         {
-            description: 'Get firmware information for a device including current version and available updates.',
+            description:
+                'Get the latest firmware information for a device (current version and, when the controller has checked, the available update).',
             inputSchema: getFirmwareDetailsSchema.shape,
         },
         wrapToolHandler('getFirmwareDetails', async ({ deviceMac, siteId }) => toToolResult(await client.getFirmwareDetails(deviceMac, siteId)))

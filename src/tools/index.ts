@@ -47,6 +47,7 @@ import { registerListIpGroupsTool } from './listIpGroups.js';
 import { registerListLogsTool } from './listLogs.js';
 import { registerListMostActiveClientsTool } from './listMostActiveClients.js';
 import { registerListPoeSchedulesTool } from './listPoeSchedules.js';
+import { registerListPortForwardingsTool } from './listPortForwardings.js';
 import { registerListRebootSchedulesTool } from './listRebootSchedules.js';
 import { registerListRoutesTool } from './listRoutes.js';
 import { registerListSitesTool } from './listSites.js';
@@ -104,6 +105,7 @@ export function registerAllTools(server: McpServer, client: OmadaClient): void {
     registerListFirewallAclsTool(server, client);
     registerListIpGroupsTool(server, client);
     registerListRoutesTool(server, client);
+    registerListPortForwardingsTool(server, client);
     registerGetSwitchTool(server, client);
     registerGetCableTestResultsTool(server, client);
     registerGetSwitchNetworksTool(server, client);

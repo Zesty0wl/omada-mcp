@@ -13,7 +13,9 @@ export function registerGetSwitchPortsTool(server: McpServer, client: OmadaClien
     server.registerTool(
         'getSwitchPorts',
         {
-            description: 'Get all ports for a switch by its MAC address, including status, profile, PoE, link speed, and STP state.',
+            description:
+                'Get all ports for a switch by its MAC address, including status, profile, PoE, link speed, and STP state. Uses the internal ' +
+                'API when web credentials are set; otherwise returns the portList from the switch detail.',
             inputSchema: getSwitchPortsSchema.shape,
         },
         wrapToolHandler('getSwitchPorts', async ({ switchMac, siteId }) => toToolResult(await client.getSwitchPorts(switchMac, siteId)))

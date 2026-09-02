@@ -102,6 +102,7 @@ curl -sk -X PATCH ".../sites/<siteId>/lan-networks/000000000000000000000000" \
 
 ## Caveats
 
+- **`-1600` is also the answer to a wrong HTTP method.** `PUT` on a route the controller serves only as `PATCH` returns `-1600 Unsupported request path`, byte for byte the same as a nonexistent path. On firmware 6.2.14.12 that is how `updateLanNetwork`, `updateLanProfile` and `updateFirewallSetting` (all `PATCH`) and `deleteLanNetwork` (`DELETE` on v1 only) were misread as unsupported. Before concluding an Open API endpoint is absent, check the method in the controller's own document under [`docs/openapi/`](openapi/) and probe with the documented method and a bogus ID.
 - This API is undocumented and TP-Link may change it in any firmware release. That is precisely why dumps are committed per firmware version.
 - A path appearing in the UI source does not guarantee your hardware supports it; a controller managing no switches may still ship switch modules.
 - Scraped paths are templates. Placeholders appear as `${...}` fragments or are concatenated at runtime, so some entries are partial.
