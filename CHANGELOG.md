@@ -18,6 +18,11 @@ So every release below records the controller firmware it was **developed and ve
 
 ---
 
+## [Unreleased]
+
+### Changed
+- npm package name is now `@zesty0wl/omada-mcp`, so directories such as Glama link to this fork rather than the upstream `tplink-omada-mcp` package. The `tplink-omada-mcp` command is unchanged.
+
 ## [0.7.0] — 2026-09-02
 
 **Verified against:** the 0.6.0 hardware — OC200 hardware controller, firmware **6.2.14.12** (Open API v3), ER7206 v1.0 gateway, T1600G-28PS v3.0 and SG2008P v3.20 switches, EAP610 access points.
