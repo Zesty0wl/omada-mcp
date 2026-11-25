@@ -100,7 +100,7 @@ export class OmadaClient {
         this.actionOps = new ActionOperations(this.request, this.siteOps, this.buildOmadaPath.bind(this), (identifier, siteId) =>
             this.deviceOps.getDevice(identifier, siteId)
         );
-        this.genericOps = new GenericOperations(this.request, this.buildOmadaPath.bind(this));
+        this.genericOps = new GenericOperations(this.request, this.buildOmadaPath.bind(this), this.siteOps);
         this.switchOps = new SwitchOperations(this.request, this.siteOps, this.buildOmadaPath.bind(this));
         this.scheduleOps = new ScheduleOperations(this.siteOps);
 
@@ -307,6 +307,18 @@ export class OmadaClient {
         return await this.networkOps.listPortForwardings(siteId);
     }
 
+    public async createPortForwarding(data: Record<string, unknown>, siteId?: string): Promise<unknown> {
+        return await this.networkOps.createPortForwarding(data, siteId);
+    }
+
+    public async updatePortForwarding(portForwardingId: string, data: Record<string, unknown>, siteId?: string): Promise<unknown> {
+        return await this.networkOps.updatePortForwarding(portForwardingId, data, siteId);
+    }
+
+    public async deletePortForwarding(portForwardingId: string, siteId?: string): Promise<unknown> {
+        return await this.networkOps.deletePortForwarding(portForwardingId, siteId);
+    }
+
     // Switch operations
     public async getSwitch(switchMac: string, siteId?: string): Promise<unknown> {
         return await this.switchOps.getSwitch(switchMac, siteId);
@@ -370,9 +382,10 @@ export class OmadaClient {
         path: string,
         version?: string,
         body?: unknown,
-        queryParams?: Record<string, unknown>
+        queryParams?: Record<string, unknown>,
+        siteId?: string
     ): Promise<unknown> {
-        return await this.genericOps.genericApiCall(method, path, version, body, queryParams);
+        return await this.genericOps.genericApiCall(method, path, version, body, queryParams, siteId);
     }
 
     // Generic API call (raw)

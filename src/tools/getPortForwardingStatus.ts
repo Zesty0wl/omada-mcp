@@ -7,7 +7,7 @@ import { createPaginationSchema } from '../utils/pagination-schema.js';
 
 const portForwardingSchema = z.object({
     type: z.enum(['User', 'UPnP']).describe('Port forwarding type: User (manually configured) or UPnP (automatically configured)'),
-    siteId: z.string().min(1).describe('Site ID (required)'),
+    siteId: z.string().min(1).optional().describe('Site ID (defaults to the configured site)'),
     ...createPaginationSchema(10),
 });
 

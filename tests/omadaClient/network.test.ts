@@ -15,6 +15,7 @@ describe('NetworkOperations', () => {
         mockRequest = {
             get: vi.fn(),
             post: vi.fn(),
+            put: vi.fn(),
             patch: vi.fn(),
             delete: vi.fn(),
             fetchPaginated: vi.fn(),
@@ -266,6 +267,40 @@ describe('NetworkOperations', () => {
             await networkOps.deleteLanNetwork('net-1', 'site-123');
 
             expect(mockRequest.delete).toHaveBeenCalledWith('/openapi/v1/test-omadac/sites/site-123/lan-networks/net-1');
+        });
+    });
+
+    describe('port forwarding writes', () => {
+        const ok: OmadaApiResponse<unknown> = { errorCode: 0, result: undefined };
+
+        it('creates a rule with POST on the v1 NAT path', async () => {
+            vi.mocked(mockRequest.post).mockResolvedValue(ok);
+
+            await networkOps.createPortForwarding({ name: 'Plex' }, 'site-123');
+
+            expect(mockRequest.post).toHaveBeenCalledWith('/openapi/v1/test-omadac/sites/site-123/nat/port-forwardings', { name: 'Plex' });
+        });
+
+        it('replaces a rule with PUT, the only method the controller routes there', async () => {
+            vi.mocked(mockRequest.put).mockResolvedValue(ok);
+
+            await networkOps.updatePortForwarding('pf-1', { name: 'Plex' });
+
+            expect(mockRequest.put).toHaveBeenCalledWith('/openapi/v1/test-omadac/sites/default-site/nat/port-forwardings/pf-1', { name: 'Plex' });
+        });
+
+        it('deletes a rule on the v1 NAT path', async () => {
+            vi.mocked(mockRequest.delete).mockResolvedValue(ok);
+
+            await networkOps.deletePortForwarding('pf-1', 'site-123');
+
+            expect(mockRequest.delete).toHaveBeenCalledWith('/openapi/v1/test-omadac/sites/site-123/nat/port-forwardings/pf-1');
+        });
+
+        it('throws when the controller rejects the write', async () => {
+            vi.mocked(mockRequest.post).mockResolvedValue({ errorCode: -1505, msg: 'no permission' });
+
+            await expect(networkOps.createPortForwarding({}, 'site-123')).rejects.toThrow('no permission');
         });
     });
 

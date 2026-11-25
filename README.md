@@ -83,7 +83,7 @@ Omada controllers expose two APIs: the documented **Open API** (`/openapi/v1/...
 
 Verified against **OC200 hardware controller, firmware 6.2.14.12** (ER7206 gateway, T1600G-28PS and SG2008P switches, EAP610 access points):
 
-**Work over the Open API alone** — `listSites` `listDevices` `getDevice` `getSwitch` `listClients` `getClient` `listDevicesStats` `listMostActiveClients` `listClientsActivity` `listClientsPastConnections` `getInternetInfo` `getLanNetworkList` `getLanProfileList` `getWlanGroupList` `getSsidList` `getSsidDetail` `getFirewallSetting` `updateFirewallSetting` `searchDevices` `rebootDevice` `adoptDevice` `blockClient` `unblockClient` `reconnectClient` `updateClient` `setDeviceLed` `getFirmwareDetails` `startFirmwareUpgrade` `listRoutes` `listLogs` `listPortForwardings` `getCableTestResults` `getSwitchStackDetail` `updateSwitchPort` `setSwitchPort*` `batchSetSwitchPort*` and the LAN network/profile write tools. `listEvents` and `getSwitchPorts` work here too, with reduced detail.
+**Work over the Open API alone** — `listSites` `listDevices` `getDevice` `getSwitch` `listClients` `getClient` `listDevicesStats` `listMostActiveClients` `listClientsActivity` `listClientsPastConnections` `getInternetInfo` `getLanNetworkList` `getLanProfileList` `getWlanGroupList` `getSsidList` `getSsidDetail` `getFirewallSetting` `updateFirewallSetting` `searchDevices` `rebootDevice` `adoptDevice` `blockClient` `unblockClient` `reconnectClient` `updateClient` `setDeviceLed` `getFirmwareDetails` `startFirmwareUpgrade` `listRoutes` `listLogs` `listPortForwardings` `createPortForwarding` `updatePortForwarding` `deletePortForwarding` `getCableTestResults` `getSwitchStackDetail` `updateSwitchPort` `setSwitchPort*` `batchSetSwitchPort*` and the LAN network/profile write tools. `listEvents` and `getSwitchPorts` work here too, with reduced detail.
 
 **Require `OMADA_WEB_USERNAME` / `OMADA_WEB_PASSWORD`** — all schedule and site settings tools, `listFirewallAcls`, `createFirewallAcl`, `deleteFirewallAcl`, `listIpGroups`, `setGatewayWanConnect`. `getSwitchPorts` and `listEvents` prefer the internal API when it is available.
 
@@ -177,6 +177,7 @@ If you run different hardware or firmware, a dump and a compatibility correction
 | Tool | Description |
 |---|---|
 | `createLanNetwork` / `updateLanNetwork` / `deleteLanNetwork` | Manage LAN networks, including DHCP pools and the DNS servers handed to clients |
+| `createPortForwarding` / `updatePortForwarding` / `deletePortForwarding` | Manage NAT port forwarding rules on the gateway. `updatePortForwarding` takes only the fields to change and merges them into the current rule |
 | `createLanProfile` / `updateLanProfile` | Manage switch port LAN profiles (networks, PoE, 802.1X, STP, bandwidth/storm control) |
 | `updateFirewallSetting` | Update firewall settings |
 | `createFirewallAcl` / `deleteFirewallAcl` | Manage firewall ACL rules (internal API) |
@@ -208,7 +209,7 @@ If you run different hardware or firmware, a dump and a compatibility correction
 
 | Tool | Description |
 |---|---|
-| `genericApiCall` | Invoke any Omada Open API endpoint directly |
+| `genericApiCall` | Invoke any Omada Open API endpoint directly. `{siteId}` in the path is filled in with the `siteId` argument or the configured site |
 
 ## Documentation
 

@@ -20,6 +20,16 @@ So every release below records the controller firmware it was **developed and ve
 
 ## [Unreleased]
 
+**Verified against:** OC200 hardware controller, firmware **6.2.14.12** (Open API v3), ER7206 v1.0 gateway.
+
+### Added
+- **`createPortForwarding`**, **`updatePortForwarding`**, **`deletePortForwarding`**: manage NAT port forwarding rules (`POST`, `PUT` and `DELETE` on `/sites/{siteId}/nat/port-forwardings`). The controller routes only `PUT` for changes and replaces the whole rule, so `updatePortForwarding` reads the current rule from `listPortForwardings`, merges the fields you pass and sends the full body. Verified on 6.2.14.12 by creating, changing (port and source restriction) and deleting a disabled rule.
+
+### Fixed
+- **The server would not connect over stdio.** dotenv 17 prints an `injecting env` banner to stdout by default. stdout is the MCP message stream, so clients such as Claude Code read a non-JSON line and closed the connection. Both `.env` loads now pass `quiet: true`.
+- **`genericApiCall` sent `{siteId}` literally.** Its own description gives paths like `/sites/{siteId}/...`, but nothing filled the placeholder in, so the controller answered `-1505 The current user does not have permissions to access this site`. `{siteId}` is now replaced with the new optional `siteId` argument or the configured site.
+- **`getPortForwardingStatus` required `siteId`.** It was the only tool that did; it now defaults to the configured site like every other tool.
+
 ### Changed
 - npm package name is now `@zesty0wl/omada-mcp`, so directories such as Glama link to this fork rather than the upstream `tplink-omada-mcp` package. The `tplink-omada-mcp` command is unchanged.
 

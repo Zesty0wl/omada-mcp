@@ -10,6 +10,7 @@ const genericApiCallSchema = z.object({
     version: z.enum(['v1', 'v2']).optional().default('v1'),
     body: z.record(z.unknown()).optional(),
     queryParams: z.record(z.unknown()).optional(),
+    siteId: z.string().min(1).optional().describe('Site ID substituted for {siteId} in the path (defaults to the configured site)'),
 });
 
 export function registerGenericApiCallTool(server: McpServer, client: OmadaClient): void {
@@ -19,14 +20,14 @@ export function registerGenericApiCallTool(server: McpServer, client: OmadaClien
             description:
                 'Execute an arbitrary Omada API call. Use this for any endpoint not covered by other tools. ' +
                 'Path is relative (e.g. "/sites/{siteId}/setting/firewall/acls"). ' +
-                'The omadacId prefix is added automatically.',
+                'The omadacId prefix is added automatically, and {siteId} is replaced with the siteId argument or the configured site.',
             inputSchema: genericApiCallSchema.shape,
             annotations: {
                 destructiveHint: true,
             },
         },
-        wrapToolHandler('genericApiCall', async ({ method, path, version, body, queryParams }) =>
-            toToolResult(await client.genericApiCall(method, path, version, body, queryParams))
+        wrapToolHandler('genericApiCall', async ({ method, path, version, body, queryParams, siteId }) =>
+            toToolResult(await client.genericApiCall(method, path, version, body, queryParams, siteId))
         )
     );
 }

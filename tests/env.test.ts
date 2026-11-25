@@ -23,8 +23,8 @@ describe('env loader', () => {
 
         await loadEnvModule();
 
-        expect(configMock).toHaveBeenNthCalledWith(1, { path: '.env' });
-        expect(configMock).toHaveBeenNthCalledWith(2, { path: '.env.local', override: true });
+        expect(configMock).toHaveBeenNthCalledWith(1, { path: '.env', quiet: true });
+        expect(configMock).toHaveBeenNthCalledWith(2, { path: '.env.local', override: true, quiet: true });
         expect(existsMock).toHaveBeenCalledWith('.env.local');
     });
 
@@ -42,6 +42,6 @@ describe('env loader', () => {
         await loadEnvModule();
 
         expect(configMock).toHaveBeenCalledTimes(1);
-        expect(configMock).toHaveBeenCalledWith({ path: '.env' });
+        expect(configMock).toHaveBeenCalledWith({ path: '.env', quiet: true });
     });
 });

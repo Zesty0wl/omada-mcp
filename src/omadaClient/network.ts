@@ -80,6 +80,40 @@ export class NetworkOperations {
     }
 
     /**
+     * Create a port forwarding rule (v1 API).
+     * OperationId: createPortForwarding — POST /sites/{siteId}/nat/port-forwardings.
+     */
+    public async createPortForwarding(data: Record<string, unknown>, siteId?: string): Promise<unknown> {
+        const resolvedSiteId = this.site.resolveSiteId(siteId);
+        const path = this.buildPath(`/sites/${encodeURIComponent(resolvedSiteId)}/nat/port-forwardings`);
+        const response = await this.request.post<OmadaApiResponse<unknown>>(path, data);
+        return this.request.ensureSuccess(response);
+    }
+
+    /**
+     * Replace a port forwarding rule (v1 API).
+     * OperationId: modifyPortForwarding — PUT /sites/{siteId}/nat/port-forwardings/{portForwardingId}.
+     * The controller routes PUT here (not PATCH) and replaces the whole rule, so send every field.
+     */
+    public async updatePortForwarding(portForwardingId: string, data: Record<string, unknown>, siteId?: string): Promise<unknown> {
+        const resolvedSiteId = this.site.resolveSiteId(siteId);
+        const path = this.buildPath(`/sites/${encodeURIComponent(resolvedSiteId)}/nat/port-forwardings/${encodeURIComponent(portForwardingId)}`);
+        const response = await this.request.put<OmadaApiResponse<unknown>>(path, data);
+        return this.request.ensureSuccess(response);
+    }
+
+    /**
+     * Delete a port forwarding rule (v1 API).
+     * OperationId: deletePortForwarding — DELETE /sites/{siteId}/nat/port-forwardings/{portForwardingId}.
+     */
+    public async deletePortForwarding(portForwardingId: string, siteId?: string): Promise<unknown> {
+        const resolvedSiteId = this.site.resolveSiteId(siteId);
+        const path = this.buildPath(`/sites/${encodeURIComponent(resolvedSiteId)}/nat/port-forwardings/${encodeURIComponent(portForwardingId)}`);
+        const response = await this.request.delete<OmadaApiResponse<unknown>>(path);
+        return this.request.ensureSuccess(response);
+    }
+
+    /**
      * Get LAN network list (v2 API) with pagination.
      * OperationId: getLanNetworkListV2
      */
